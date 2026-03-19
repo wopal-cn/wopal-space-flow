@@ -506,7 +506,7 @@ describe('STATE.md frontmatter sync', () => {
 // stateExtractField and stateReplaceField helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { stateExtractField, stateReplaceField } = require('../get-shit-done/bin/lib/state.cjs');
+const { stateExtractField, stateReplaceField, stateReplaceFieldWithFallback } = require('../get-shit-done/bin/lib/state.cjs');
 
 describe('stateExtractField and stateReplaceField helpers', () => {
   // stateExtractField tests
@@ -582,6 +582,45 @@ describe('stateExtractField and stateReplaceField helpers', () => {
 
     const reExtracted = stateExtractField(updated, 'Phase');
     assert.strictEqual(reExtracted, '4', 'extract after replace should return "4"');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// stateReplaceFieldWithFallback — consolidated fallback helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('stateReplaceFieldWithFallback', () => {
+  test('replaces primary field when present', () => {
+    const content = '# State\n\n**Status:** Old\n';
+    const result = stateReplaceFieldWithFallback(content, 'Status', null, 'New');
+    assert.ok(result.includes('**Status:** New'));
+  });
+
+  test('falls back to secondary field when primary not found', () => {
+    const content = '# State\n\nLast activity: 2024-01-01\n';
+    const result = stateReplaceFieldWithFallback(content, 'Last Activity', 'Last activity', '2025-03-19');
+    assert.ok(result.includes('Last activity: 2025-03-19'), 'should update fallback field');
+  });
+
+  test('returns content unchanged when neither field matches', () => {
+    const content = '# State\n\n**Phase:** 3\n';
+    const result = stateReplaceFieldWithFallback(content, 'Status', 'state', 'New');
+    assert.strictEqual(result, content, 'content should be unchanged');
+  });
+
+  test('prefers primary over fallback when both exist', () => {
+    const content = '# State\n\n**Status:** Old\nStatus: Also old\n';
+    const result = stateReplaceFieldWithFallback(content, 'Status', 'Status', 'New');
+    // Bold format is tried first by stateReplaceField
+    assert.ok(result.includes('**Status:** New'), 'should replace bold (primary) format');
+  });
+
+  test('works with plain format fields', () => {
+    const content = '# State\n\nPhase: 1 of 3 (Foundation)\nStatus: In progress\nPlan: 01-01\n';
+    let updated = stateReplaceFieldWithFallback(content, 'Status', null, 'Complete');
+    assert.ok(updated.includes('Status: Complete'), 'should update plain Status');
+    updated = stateReplaceFieldWithFallback(updated, 'Current Plan', 'Plan', 'Not started');
+    assert.ok(updated.includes('Plan: Not started'), 'should fall back to Plan field');
   });
 });
 

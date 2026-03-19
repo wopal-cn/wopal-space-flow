@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawnSync } = require('child_process');
+const { execSync, execFileSync, spawnSync } = require('child_process');
 const { MODEL_PROFILES } = require('./model-profiles.cjs');
 
 // ─── Path helpers ────────────────────────────────────────────────────────────
@@ -131,7 +131,9 @@ function isGitIgnored(cwd, targetPath) {
     // Without it, git check-ignore returns "not ignored" for tracked files even when
     // .gitignore explicitly lists them — a common source of confusion when .planning/
     // was committed before being added to .gitignore.
-    execSync('git check-ignore -q --no-index -- ' + targetPath.replace(/[^a-zA-Z0-9._\-/]/g, ''), {
+    // Use execFileSync (array args) to prevent shell interpretation of special characters
+    // in file paths — avoids command injection via crafted path names.
+    execFileSync('git', ['check-ignore', '-q', '--no-index', '--', targetPath], {
       cwd,
       stdio: 'pipe',
     });

@@ -201,6 +201,22 @@ function stateReplaceField(content, fieldName, newValue) {
   return null;
 }
 
+/**
+ * Replace a STATE.md field with fallback field name support.
+ * Tries `primary` first, then `fallback` (if provided), returns content unchanged
+ * if neither matches. This consolidates the replaceWithFallback pattern that was
+ * previously duplicated inline across phase.cjs, milestone.cjs, and state.cjs.
+ */
+function stateReplaceFieldWithFallback(content, primary, fallback, value) {
+  let result = stateReplaceField(content, primary, value);
+  if (result) return result;
+  if (fallback) {
+    result = stateReplaceField(content, fallback, value);
+    if (result) return result;
+  }
+  return content;
+}
+
 function cmdStateAdvancePlan(cwd, raw) {
   const statePath = planningPaths(cwd).state;
   if (!fs.existsSync(statePath)) { output({ error: 'STATE.md not found' }, raw); return; }
@@ -232,16 +248,9 @@ function cmdStateAdvancePlan(cwd, raw) {
     return;
   }
 
-  const replaceField = (c, primary, fallback, value) => {
-    let r = stateReplaceField(c, primary, value);
-    if (r) return r;
-    if (fallback) { r = stateReplaceField(c, fallback, value); if (r) return r; }
-    return c;
-  };
-
   if (currentPlan >= totalPlans) {
-    content = replaceField(content, 'Status', null, 'Phase complete — ready for verification');
-    content = replaceField(content, 'Last Activity', 'Last activity', today);
+    content = stateReplaceFieldWithFallback(content, 'Status', null, 'Phase complete — ready for verification');
+    content = stateReplaceFieldWithFallback(content, 'Last Activity', 'Last activity', today);
     writeStateMd(statePath, content, cwd);
     output({ advanced: false, reason: 'last_plan', current_plan: currentPlan, total_plans: totalPlans, status: 'ready_for_verification' }, raw, 'false');
   } else {
@@ -253,8 +262,8 @@ function cmdStateAdvancePlan(cwd, raw) {
     } else {
       content = stateReplaceField(content, 'Current Plan', String(newPlan)) || content;
     }
-    content = replaceField(content, 'Status', null, 'Ready to execute');
-    content = replaceField(content, 'Last Activity', 'Last activity', today);
+    content = stateReplaceFieldWithFallback(content, 'Status', null, 'Ready to execute');
+    content = stateReplaceFieldWithFallback(content, 'Last Activity', 'Last activity', today);
     writeStateMd(statePath, content, cwd);
     output({ advanced: true, previous_plan: currentPlan, current_plan: newPlan, total_plans: totalPlans }, raw, 'true');
   }
@@ -906,6 +915,7 @@ function cmdSignalResume(cwd, raw) {
 module.exports = {
   stateExtractField,
   stateReplaceField,
+  stateReplaceFieldWithFallback,
   writeStateMd,
   cmdStateLoad,
   cmdStateGet,

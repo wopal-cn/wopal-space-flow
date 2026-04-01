@@ -68,6 +68,14 @@ AGENT_SKILLS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills
 
 Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelization`, `branching_strategy`, `branch_name`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `plans`, `incomplete_plans`, `plan_count`, `incomplete_count`, `state_exists`, `roadmap_exists`, `phase_req_ids`.
 
+Read worktree config:
+
+```bash
+USE_WORKTREES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.use_worktrees 2>/dev/null || echo "true")
+```
+
+When `USE_WORKTREES` is `false`, all executor agents run without `isolation="worktree"` — they execute sequentially on the main working tree instead of in parallel worktrees.
+
 **If `phase_found` is false:** Error — phase directory not found.
 **If `plan_count` is 0:** Error — no plans found in phase.
 **If `state_exists` is false but `.planning/` exists:** Offer reconstruct or continue.
@@ -223,6 +231,8 @@ Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZAT
    For 200k models, this keeps orchestrator context lean (~10-15%).
    For 1M+ models (Opus 4.6, Sonnet 4.6), richer context can be passed directly.
 
+   **Worktree mode** (`USE_WORKTREES` is not `false`):
+
    ```
    Task(
      subagent_type="gsd-executor",
@@ -278,6 +288,19 @@ Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZAT
      "
    )
    ```
+
+   **Sequential mode** (`USE_WORKTREES` is `false`):
+
+   Omit `isolation="worktree"` from the Task call. Replace the `<parallel_execution>` block with:
+
+   ```
+       <sequential_execution>
+       You are running as a SEQUENTIAL executor agent on the main working tree.
+       Use normal git commits (with hooks). Do NOT use --no-verify.
+       </sequential_execution>
+   ```
+
+   When worktrees are disabled, execute plans **one at a time within each wave** (sequential) regardless of the `PARALLELIZATION` setting — multiple agents writing to the same working tree concurrently would cause conflicts.
 
 3. **Wait for all agents in wave to complete.**
 

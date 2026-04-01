@@ -138,6 +138,10 @@ AGENT_SKILLS_VERIFIER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" age
 
 Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `branch_name`, `quick_id`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`.
 
+```bash
+USE_WORKTREES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.use_worktrees 2>/dev/null || echo "true")
+```
+
 **If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/gsd:new-project` first.
 
 Quick tasks can run mid-phase - validation only checks ROADMAP.md exists, not phase status.
@@ -571,7 +575,7 @@ ${AGENT_SKILLS_EXECUTOR}
 ",
   subagent_type="gsd-executor",
   model="{executor_model}",
-  isolation="worktree",
+  ${USE_WORKTREES !== "false" ? 'isolation="worktree",' : ''}
   description="Execute: ${DESCRIPTION}"
 )
 ```

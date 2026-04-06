@@ -1,13 +1,3 @@
-> [!IMPORTANT]
-> **npm is currently stuck at v1.32.0 — versions v1.33.0 and v1.34.0 are not installable via `npx get-shit-done-cc@latest`.**
-> This is a known issue. The npm publish process requires access that TÂCHES is temporarily unable to complete. We are aware and will publish as soon as possible.
->
-> **Workaround — install the latest version directly from GitHub:**
-> ```bash
-> npx github:gsd-build/get-shit-done
-> ```
-> This installs v1.34.0 from source and works on Mac, Windows, and Linux. All runtime flags (`--claude`, `--gemini`, `--all`, etc.) work identically.
-
 <div align="center">
 
 # GET SHIT DONE

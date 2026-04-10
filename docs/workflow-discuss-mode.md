@@ -1,6 +1,6 @@
 # Discuss Mode: Assumptions vs Interview
 
-GSD's discuss-phase has two modes for gathering implementation context before planning.
+WSF's discuss-phase has two modes for gathering implementation context before planning.
 
 ## Modes
 
@@ -27,10 +27,10 @@ correction. Good for:
 
 ```bash
 # Enable assumptions mode
-gsd-tools config-set workflow.discuss_mode assumptions
+wsf-tools config-set workflow.discuss_mode assumptions
 
 # Switch back to interview mode
-gsd-tools config-set workflow.discuss_mode discuss
+wsf-tools config-set workflow.discuss_mode discuss
 ```
 
 The setting is per-project (stored in `.planning/config.json`).

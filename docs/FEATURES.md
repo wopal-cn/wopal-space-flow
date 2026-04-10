@@ -1,4 +1,4 @@
-# GSD Feature Reference
+# WSF Feature Reference
 
 > Complete feature and function documentation with requirements. For architecture details, see [Architecture](ARCHITECTURE.md). For command syntax, see [Command Reference](COMMANDS.md).
 
@@ -74,7 +74,7 @@
   - [Windsurf Runtime Support](#56-windsurf-runtime-support)
   - [Internationalized Documentation](#57-internationalized-documentation)
 - [v1.30 Features](#v130-features)
-  - [GSD SDK](#58-gsd-sdk)
+  - [WSF SDK](#58-wsf-sdk)
 - [v1.31 Features](#v131-features)
   - [Schema Drift Detection](#59-schema-drift-detection)
   - [Security Enforcement](#60-security-enforcement)
@@ -99,7 +99,7 @@
   - [Autonomous Audit-to-Fix](#98-autonomous-audit-to-fix)
   - [Improved Prompt Injection Scanner](#99-improved-prompt-injection-scanner)
   - [Stall Detection in Plan-Phase](#100-stall-detection-in-plan-phase)
-  - [Hard Stop Safety Gates in /gsd-next](#101-hard-stop-safety-gates-in-gsd-next)
+  - [Hard Stop Safety Gates in /wsf-next](#101-hard-stop-safety-gates-in-wsf-next)
   - [Adaptive Model Preset](#102-adaptive-model-preset)
   - [Post-Merge Hunk Verification](#103-post-merge-hunk-verification)
 - [v1.32 Features](#v132-features)
@@ -130,7 +130,7 @@
 
 ### 1. Project Initialization
 
-**Command:** `/gsd-new-project [--auto @file.md]`
+**Command:** `/wsf-new-project [--auto @file.md]`
 
 **Purpose:** Transform a user's idea into a fully structured project with research, scoped requirements, and a phased roadmap.
 
@@ -169,13 +169,13 @@
 - Research agents have web search capability for current ecosystem information
 - Granularity setting controls phase count: `coarse` (3-5), `standard` (5-8), `fine` (8-12)
 - `--auto` mode extracts all information from the provided document without interactive questioning
-- Existing codebase context (from `/gsd-map-codebase`) is loaded if present
+- Existing codebase context (from `/wsf-map-codebase`) is loaded if present
 
 ---
 
 ### 2. Phase Discussion
 
-**Command:** `/gsd-discuss-phase [N] [--auto] [--batch]`
+**Command:** `/wsf-discuss-phase [N] [--auto] [--batch]`
 
 **Purpose:** Capture user's implementation preferences and decisions before research and planning begin. Eliminates the gray areas that cause AI to guess.
 
@@ -202,7 +202,7 @@
 
 ### 3. UI Design Contract
 
-**Command:** `/gsd-ui-phase [N]`
+**Command:** `/wsf-ui-phase [N]`
 
 **Purpose:** Lock design decisions before planning so that all components in a phase share consistent visual standards.
 
@@ -234,7 +234,7 @@
 
 ### 4. Phase Planning
 
-**Command:** `/gsd-plan-phase [N] [--auto] [--skip-research] [--skip-verify]`
+**Command:** `/wsf-plan-phase [N] [--auto] [--skip-research] [--skip-verify]`
 
 **Purpose:** Research the implementation domain and produce verified, atomic execution plans.
 
@@ -245,7 +245,7 @@
 - REQ-PLAN-04: System MUST include `read_first` and `acceptance_criteria` sections in every plan
 - REQ-PLAN-05: System MUST run plan checker verification loop (up to 3 iterations) unless `--skip-verify` is set
 - REQ-PLAN-06: System MUST support `--skip-research` flag to bypass research phase
-- REQ-PLAN-07: System MUST prompt user to run `/gsd-ui-phase` if frontend phase detected and no UI-SPEC.md exists (UI safety gate)
+- REQ-PLAN-07: System MUST prompt user to run `/wsf-ui-phase` if frontend phase detected and no UI-SPEC.md exists (UI safety gate)
 - REQ-PLAN-08: System MUST include Nyquist validation mapping when `workflow.nyquist_validation` is enabled
 - REQ-PLAN-09: System MUST verify all phase requirements are covered by at least one plan before planning completes (requirements coverage gate)
 
@@ -284,7 +284,7 @@
 
 ### 5. Phase Execution
 
-**Command:** `/gsd-execute-phase <N>`
+**Command:** `/wsf-execute-phase <N>`
 
 **Purpose:** Execute all plans in a phase using wave-based parallelization with fresh context windows per executor.
 
@@ -328,7 +328,7 @@
 
 ### 6. Work Verification
 
-**Command:** `/gsd-verify-work [N]`
+**Command:** `/wsf-verify-work [N]`
 
 **Purpose:** User acceptance testing — walk the user through testing each deliverable and auto-diagnose failures.
 
@@ -346,7 +346,7 @@
 
 ### 6.5. Ship
 
-**Command:** `/gsd-ship [N] [--draft]`
+**Command:** `/wsf-ship [N] [--draft]`
 
 **Purpose:** Bridge local completion → merged PR. After verification passes, push branch, create PR with auto-generated body from planning artifacts, optionally trigger review, and track in STATE.md.
 
@@ -365,7 +365,7 @@
 
 ### 7. UI Review
 
-**Command:** `/gsd-ui-review [N]`
+**Command:** `/wsf-ui-review [N]`
 
 **Purpose:** Retroactive 6-pillar visual audit of implemented frontend code. Works standalone on any project.
 
@@ -390,7 +390,7 @@
 
 ### 8. Milestone Management
 
-**Commands:** `/gsd-audit-milestone`, `/gsd-complete-milestone`, `/gsd-new-milestone [name]`
+**Commands:** `/wsf-audit-milestone`, `/wsf-complete-milestone`, `/wsf-new-milestone [name]`
 
 **Purpose:** Verify milestone completion, archive, tag release, and start the next development cycle.
 
@@ -405,7 +405,7 @@
 - REQ-MILE-08: New milestone MUST follow same flow as new-project (questions → research → requirements → roadmap)
 - REQ-MILE-09: New milestone MUST NOT reset existing workflow configuration
 
-**Gap Closure:** `/gsd-plan-milestone-gaps` creates phases to close gaps identified by audit.
+**Gap Closure:** `/wsf-plan-milestone-gaps` creates phases to close gaps identified by audit.
 
 ---
 
@@ -413,7 +413,7 @@
 
 ### 9. Phase Management
 
-**Commands:** `/gsd-add-phase`, `/gsd-insert-phase [N]`, `/gsd-remove-phase [N]`
+**Commands:** `/wsf-add-phase`, `/wsf-insert-phase [N]`, `/wsf-remove-phase [N]`
 
 **Purpose:** Dynamic roadmap modification during development.
 
@@ -428,9 +428,9 @@
 
 ### 10. Quick Mode
 
-**Command:** `/gsd-quick [--full] [--discuss] [--research]`
+**Command:** `/wsf-quick [--full] [--discuss] [--research]`
 
-**Purpose:** Ad-hoc task execution with GSD guarantees but a faster path.
+**Purpose:** Ad-hoc task execution with WSF guarantees but a faster path.
 
 **Requirements:**
 - REQ-QUICK-01: System MUST accept freeform task description
@@ -447,7 +447,7 @@
 
 ### 11. Autonomous Mode
 
-**Command:** `/gsd-autonomous [--from N]`
+**Command:** `/wsf-autonomous [--from N]`
 
 **Purpose:** Run all remaining phases autonomously — discuss → plan → execute per phase.
 
@@ -462,13 +462,13 @@
 
 ### 12. Freeform Routing
 
-**Command:** `/gsd-do`
+**Command:** `/wsf-do`
 
-**Purpose:** Analyze freeform text and route to the appropriate GSD command.
+**Purpose:** Analyze freeform text and route to the appropriate WSF command.
 
 **Requirements:**
 - REQ-DO-01: System MUST parse user intent from natural language input
-- REQ-DO-02: System MUST map intent to the best matching GSD command
+- REQ-DO-02: System MUST map intent to the best matching WSF command
 - REQ-DO-03: System MUST confirm the routing with the user before executing
 - REQ-DO-04: System MUST handle project-exists vs no-project contexts differently
 
@@ -476,7 +476,7 @@
 
 ### 13. Note Capture
 
-**Command:** `/gsd-note`
+**Command:** `/wsf-note`
 
 **Purpose:** Zero-friction idea capture without interrupting workflow. Append timestamped notes, list all notes, or promote notes to structured todos.
 
@@ -491,7 +491,7 @@
 
 ### 14. Auto-Advance (Next)
 
-**Command:** `/gsd-next`
+**Command:** `/wsf-next`
 
 **Purpose:** Automatically detect current project state and advance to the next logical workflow step, eliminating the need to remember which phase/step you're on.
 
@@ -499,18 +499,18 @@
 - REQ-NEXT-01: System MUST read STATE.md, ROADMAP.md, and phase directories to determine current position
 - REQ-NEXT-02: System MUST detect whether discuss, plan, execute, or verify is needed
 - REQ-NEXT-03: System MUST invoke the correct command automatically
-- REQ-NEXT-04: System MUST suggest `/gsd-new-project` if no project exists
-- REQ-NEXT-05: System MUST suggest `/gsd-complete-milestone` when all phases are complete
+- REQ-NEXT-04: System MUST suggest `/wsf-new-project` if no project exists
+- REQ-NEXT-05: System MUST suggest `/wsf-complete-milestone` when all phases are complete
 
 **State Detection Logic:**
 | State | Action |
 |-------|--------|
-| No `.planning/` directory | Suggest `/gsd-new-project` |
-| Phase has no CONTEXT.md | Run `/gsd-discuss-phase` |
-| Phase has no PLAN.md files | Run `/gsd-plan-phase` |
-| Phase has plans but no SUMMARY.md | Run `/gsd-execute-phase` |
-| Phase executed but no VERIFICATION.md | Run `/gsd-verify-work` |
-| All phases complete | Suggest `/gsd-complete-milestone` |
+| No `.planning/` directory | Suggest `/wsf-new-project` |
+| Phase has no CONTEXT.md | Run `/wsf-discuss-phase` |
+| Phase has no PLAN.md files | Run `/wsf-plan-phase` |
+| Phase has plans but no SUMMARY.md | Run `/wsf-execute-phase` |
+| Phase executed but no VERIFICATION.md | Run `/wsf-verify-work` |
+| All phases complete | Suggest `/wsf-complete-milestone` |
 
 ---
 
@@ -525,12 +525,12 @@
 - REQ-NYQ-02: System MUST map each requirement to a specific test command
 - REQ-NYQ-03: System MUST identify Wave 0 tasks (test scaffolding needed before implementation)
 - REQ-NYQ-04: Plan checker MUST enforce Nyquist compliance as 8th verification dimension
-- REQ-NYQ-05: System MUST support retroactive validation via `/gsd-validate-phase`
+- REQ-NYQ-05: System MUST support retroactive validation via `/wsf-validate-phase`
 - REQ-NYQ-06: System MUST be disableable via `workflow.nyquist_validation: false`
 
 **Produces:** `{phase}-VALIDATION.md` — Test coverage contract
 
-**Retroactive Validation (`/gsd-validate-phase [N]`):**
+**Retroactive Validation (`/wsf-validate-phase [N]`):**
 - Scans implementation and maps requirements to tests
 - Identifies gaps where requirements lack automated verification
 - Spawns auditor to generate tests (max 3 attempts)
@@ -558,7 +558,7 @@
 **Requirements:**
 - REQ-POSTVER-01: System MUST check against phase goals, not just task completion
 - REQ-POSTVER-02: System MUST produce VERIFICATION.md with pass/fail analysis
-- REQ-POSTVER-03: System MUST log issues for `/gsd-verify-work` to address
+- REQ-POSTVER-03: System MUST log issues for `/wsf-verify-work` to address
 - REQ-POSTVER-04: System MUST be disableable via `workflow.verifier: false`
 
 ---
@@ -579,7 +579,7 @@
 
 ### 19. Health Validation
 
-**Command:** `/gsd-health [--repair]`
+**Command:** `/wsf-health [--repair]`
 
 **Purpose:** Validate `.planning/` directory integrity and auto-repair issues.
 
@@ -602,7 +602,7 @@
 - REQ-REGR-03: Regressions MUST be surfaced before post-execution verification
 - REQ-REGR-04: System MUST identify which prior phase's tests were broken
 
-**When:** Runs automatically during `/gsd-execute-phase` before the verifier step.
+**When:** Runs automatically during `/wsf-execute-phase` before the verifier step.
 
 ---
 
@@ -616,7 +616,7 @@
 - REQ-COVGATE-03: Uncovered requirements MUST block planning completion
 - REQ-COVGATE-04: System MUST report which specific requirements lack plan coverage
 
-**When:** Runs automatically at the end of `/gsd-plan-phase` after the plan checker loop.
+**When:** Runs automatically at the end of `/wsf-plan-phase` after the plan checker loop.
 
 ---
 
@@ -632,7 +632,7 @@
 - REQ-CTX-03: Context monitor MUST inject agent-facing warnings at ≤25% remaining (CRITICAL)
 - REQ-CTX-04: Warnings MUST debounce (5 tool uses between repeated warnings)
 - REQ-CTX-05: Severity escalation (WARNING→CRITICAL) MUST bypass debounce
-- REQ-CTX-06: Context monitor MUST differentiate GSD-active vs non-GSD-active projects
+- REQ-CTX-06: Context monitor MUST differentiate WSF-active vs non-WSF-active projects
 - REQ-CTX-07: Warnings MUST be advisory, never imperative commands that override user preferences
 - REQ-CTX-08: All hooks MUST fail silently and never block tool execution
 
@@ -644,7 +644,7 @@
 
 ### 23. Session Management
 
-**Commands:** `/gsd-pause-work`, `/gsd-resume-work`, `/gsd-progress`
+**Commands:** `/wsf-pause-work`, `/wsf-resume-work`, `/wsf-progress`
 
 **Purpose:** Maintain project continuity across context resets and sessions.
 
@@ -661,7 +661,7 @@
 
 ### 24. Session Reporting
 
-**Command:** `/gsd-session-report`
+**Command:** `/wsf-session-report`
 
 **Purpose:** Generate a structured post-session summary document capturing work performed, outcomes achieved, and estimated resource usage.
 
@@ -700,7 +700,7 @@
 
 ### 26. Model Profiles
 
-**Command:** `/gsd-set-profile <quality|balanced|budget|inherit>`
+**Command:** `/wsf-set-profile <quality|balanced|budget|inherit>`
 
 **Purpose:** Control which AI model each agent uses, balancing quality vs cost.
 
@@ -717,18 +717,18 @@
 
 | Agent | `quality` | `balanced` | `budget` | `inherit` |
 |-------|-----------|------------|----------|-----------|
-| gsd-planner | Opus | Opus | Sonnet | Inherit |
-| gsd-roadmapper | Opus | Sonnet | Sonnet | Inherit |
-| gsd-executor | Opus | Sonnet | Sonnet | Inherit |
-| gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
-| gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
-| gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
-| gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
+| wsf-planner | Opus | Opus | Sonnet | Inherit |
+| wsf-roadmapper | Opus | Sonnet | Sonnet | Inherit |
+| wsf-executor | Opus | Sonnet | Sonnet | Inherit |
+| wsf-phase-researcher | Opus | Sonnet | Haiku | Inherit |
+| wsf-project-researcher | Opus | Sonnet | Haiku | Inherit |
+| wsf-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
+| wsf-debugger | Opus | Sonnet | Sonnet | Inherit |
+| wsf-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
+| wsf-verifier | Sonnet | Sonnet | Haiku | Inherit |
+| wsf-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
+| wsf-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
+| wsf-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
 
 ---
 
@@ -736,15 +736,15 @@
 
 ### 27. Codebase Mapping
 
-**Command:** `/gsd-map-codebase [area]`
+**Command:** `/wsf-map-codebase [area]`
 
-**Purpose:** Analyze an existing codebase before starting a new project, so GSD understands what exists.
+**Purpose:** Analyze an existing codebase before starting a new project, so WSF understands what exists.
 
 **Requirements:**
 - REQ-MAP-01: System MUST spawn parallel mapper agents for each analysis area
 - REQ-MAP-02: System MUST produce structured documents in `.planning/codebase/`
 - REQ-MAP-03: System MUST detect: tech stack, architecture patterns, coding conventions, concerns
-- REQ-MAP-04: Subsequent `/gsd-new-project` MUST load codebase mapping and focus questions on what's being added
+- REQ-MAP-04: Subsequent `/wsf-new-project` MUST load codebase mapping and focus questions on what's being added
 - REQ-MAP-05: Optional `[area]` argument MUST scope mapping to a specific area
 
 **Produces:**
@@ -764,7 +764,7 @@
 
 ### 28. Debug System
 
-**Command:** `/gsd-debug [description]`
+**Command:** `/wsf-debug [description]`
 
 **Purpose:** Systematic debugging with persistent state across context resets.
 
@@ -782,7 +782,7 @@
 
 ### 29. Todo Management
 
-**Commands:** `/gsd-add-todo [desc]`, `/gsd-check-todos`
+**Commands:** `/wsf-add-todo [desc]`, `/wsf-check-todos`
 
 **Purpose:** Capture ideas and tasks during sessions for later work.
 
@@ -796,7 +796,7 @@
 
 ### 30. Statistics Dashboard
 
-**Command:** `/gsd-stats`
+**Command:** `/wsf-stats`
 
 **Purpose:** Display project metrics — phases, plans, requirements, git history, and timeline.
 
@@ -810,29 +810,29 @@
 
 ### 31. Update System
 
-**Command:** `/gsd-update`
+**Command:** `/wsf-update`
 
-**Purpose:** Update GSD to the latest version with changelog preview.
+**Purpose:** Update WSF to the latest version with changelog preview.
 
 **Requirements:**
 - REQ-UPDATE-01: System MUST check for new versions via npm
 - REQ-UPDATE-02: System MUST display changelog for new version before updating
 - REQ-UPDATE-03: System MUST be runtime-aware and target the correct directory
-- REQ-UPDATE-04: System MUST back up locally modified files to `gsd-local-patches/`
-- REQ-UPDATE-05: `/gsd-reapply-patches` MUST restore local modifications after update
+- REQ-UPDATE-04: System MUST back up locally modified files to `wsf-local-patches/`
+- REQ-UPDATE-05: `/wsf-reapply-patches` MUST restore local modifications after update
 
 ---
 
 ### 32. Settings Management
 
-**Command:** `/gsd-settings`
+**Command:** `/wsf-settings`
 
 **Purpose:** Interactive configuration of workflow toggles and model profile.
 
 **Requirements:**
 - REQ-SETTINGS-01: System MUST present current settings with toggle options
 - REQ-SETTINGS-02: System MUST update `.planning/config.json`
-- REQ-SETTINGS-03: System MUST support saving as global defaults (`~/.gsd/defaults.json`)
+- REQ-SETTINGS-03: System MUST support saving as global defaults (`~/.wsf/defaults.json`)
 
 **Configurable Settings:**
 | Setting | Type | Default | Description |
@@ -858,7 +858,7 @@
 
 ### 33. Test Generation
 
-**Command:** `/gsd-add-tests [N]`
+**Command:** `/wsf-add-tests [N]`
 
 **Purpose:** Generate tests for a completed phase based on UAT criteria and implementation.
 
@@ -914,14 +914,14 @@ fix(03-01): correct auth token expiry
 
 ### 36. Multi-Runtime Support
 
-**Purpose:** Run GSD across multiple AI coding agent runtimes.
+**Purpose:** Run WSF across multiple AI coding agent runtimes.
 
 **Requirements:**
 - REQ-RUNTIME-01: System MUST support Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code
 - REQ-RUNTIME-02: Installer MUST transform content per runtime (tool names, paths, frontmatter)
 - REQ-RUNTIME-03: Installer MUST support interactive and non-interactive (`--claude --global`) modes
 - REQ-RUNTIME-04: Installer MUST support both global and local installation
-- REQ-RUNTIME-05: Uninstall MUST cleanly remove all GSD files without affecting other configurations
+- REQ-RUNTIME-05: Uninstall MUST cleanly remove all WSF files without affecting other configurations
 - REQ-RUNTIME-06: Installer MUST handle platform differences (Windows, macOS, Linux, WSL, Docker)
 
 **Runtime Transformations:**
@@ -950,14 +950,14 @@ fix(03-01): correct auth token expiry
 
 **Statusline Display:**
 ```
-[⬆ /gsd-update │] model │ [current task │] directory [█████░░░░░ 50%]
+[⬆ /wsf-update │] model │ [current task │] directory [█████░░░░░ 50%]
 ```
 
 Color coding: <50% green, <65% yellow, <80% orange, ≥80% red with skull emoji
 
 ### 38. Developer Profiling
 
-**Command:** `/gsd-profile-user [--questionnaire] [--refresh]`
+**Command:** `/wsf-profile-user [--questionnaire] [--refresh]`
 
 **Purpose:** Analyze Claude Code session history to build behavioral profiles across 8 dimensions, generating artifacts that personalize Claude's responses to the developer's style.
 
@@ -973,7 +973,7 @@ Color coding: <50% green, <65% yellow, <80% orange, ≥80% red with skull emoji
 
 **Generated Artifacts:**
 - `USER-PROFILE.md` — Full behavioral profile with evidence citations
-- `/gsd-dev-preferences` command — Load preferences in any session
+- `/wsf-dev-preferences` command — Load preferences in any session
 - `CLAUDE.md` profile section — Auto-discovered by Claude Code
 
 **Flags:**
@@ -983,7 +983,7 @@ Color coding: <50% green, <65% yellow, <80% orange, ≥80% red with skull emoji
 **Pipeline Modules:**
 - `profile-pipeline.cjs` — Session scanning, message extraction, sampling
 - `profile-output.cjs` — Profile rendering, questionnaire, artifact generation
-- `gsd-user-profiler` agent — Behavioral analysis from session data
+- `wsf-user-profiler` agent — Behavioral analysis from session data
 
 **Requirements:**
 - REQ-PROF-01: Session analysis MUST cover at least 8 behavioral dimensions
@@ -1015,14 +1015,14 @@ After Level 3 wiring verification passes, spot-check individual exports for actu
 
 ### 40. Verification Debt Tracking
 
-**Command:** `/gsd-audit-uat`
+**Command:** `/wsf-audit-uat`
 
 **Purpose:** Prevent silent loss of UAT/verification items when projects advance past phases with outstanding tests. Surfaces verification debt across all prior phases so items are never forgotten.
 
 **Components:**
 
 **1. Cross-Phase Health Check** (progress.md Step 1.6)
-Every `/gsd-progress` call scans ALL phases in the current milestone for outstanding items (pending, skipped, blocked, human_needed). Displays a non-blocking warning section with actionable links.
+Every `/wsf-progress` call scans ALL phases in the current milestone for outstanding items (pending, skipped, blocked, human_needed). Displays a non-blocking warning section with actionable links.
 
 **2. `status: partial`** (verify-work.md, UAT.md)
 New UAT status that distinguishes between "session ended" and "all tests resolved". Prevents `status: complete` when tests are still pending, blocked, or skipped without reason.
@@ -1037,12 +1037,12 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 `phase complete` CLI returns verification debt warnings in its JSON output. Transition workflow surfaces outstanding items before confirmation.
 
 **Requirements:**
-- REQ-DEBT-01: System MUST surface outstanding UAT/verification items from ALL prior phases in `/gsd-progress`
+- REQ-DEBT-01: System MUST surface outstanding UAT/verification items from ALL prior phases in `/wsf-progress`
 - REQ-DEBT-02: System MUST distinguish incomplete testing (partial) from completed testing (complete)
 - REQ-DEBT-03: System MUST categorize blocked tests with `blocked_by` tags
 - REQ-DEBT-04: System MUST persist human_needed verification items as trackable UAT files
 - REQ-DEBT-05: System MUST warn (non-blocking) during phase completion and transition when verification debt exists
-- REQ-DEBT-06: `/gsd-audit-uat` MUST scan all phases, categorize items by testability, and produce a human test plan
+- REQ-DEBT-06: `/wsf-audit-uat` MUST scan all phases, categorize items by testability, and produce a human test plan
 
 ---
 
@@ -1050,7 +1050,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 41. Fast Mode
 
-**Command:** `/gsd-fast [task description]`
+**Command:** `/wsf-fast [task description]`
 
 **Purpose:** Execute trivial tasks inline without spawning subagents or generating PLAN.md files. For tasks too small to justify planning overhead: typo fixes, config changes, small refactors, forgotten commits, simple additions.
 
@@ -1060,15 +1060,15 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 - REQ-FAST-03: System MUST track the task in `.planning/quick/` for state consistency
 - REQ-FAST-04: System MUST NOT be used for tasks requiring research, multi-step planning, or verification
 
-**When to use vs `/gsd-quick`:**
-- `/gsd-fast` — One-sentence tasks executable in under 2 minutes (typo, config change, small addition)
-- `/gsd-quick` — Anything needing research, multi-step planning, or verification
+**When to use vs `/wsf-quick`:**
+- `/wsf-fast` — One-sentence tasks executable in under 2 minutes (typo, config change, small addition)
+- `/wsf-quick` — Anything needing research, multi-step planning, or verification
 
 ---
 
 ### 42. Cross-AI Peer Review
 
-**Command:** `/gsd-review --phase N [--gemini] [--claude] [--codex] [--coderabbit] [--all]`
+**Command:** `/wsf-review --phase N [--gemini] [--claude] [--codex] [--coderabbit] [--all]`
 
 **Purpose:** Invoke external AI CLIs (Gemini, Claude, Codex, CodeRabbit) to independently review phase plans. Produces structured REVIEWS.md with per-reviewer feedback.
 
@@ -1077,7 +1077,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 - REQ-REVIEW-02: System MUST build a structured review prompt from phase plans
 - REQ-REVIEW-03: System MUST invoke each selected CLI independently
 - REQ-REVIEW-04: System MUST collect responses and produce `REVIEWS.md`
-- REQ-REVIEW-05: Reviews MUST be consumable by `/gsd-plan-phase --reviews`
+- REQ-REVIEW-05: Reviews MUST be consumable by `/wsf-plan-phase --reviews`
 
 **Produces:** `{phase}-REVIEWS.md` — Per-reviewer structured feedback
 
@@ -1085,17 +1085,17 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 43. Backlog Parking Lot
 
-**Commands:** `/gsd-add-backlog <description>`, `/gsd-review-backlog`, `/gsd-plant-seed <idea>`
+**Commands:** `/wsf-add-backlog <description>`, `/wsf-review-backlog`, `/wsf-plant-seed <idea>`
 
 **Purpose:** Capture ideas that aren't ready for active planning. Backlog items use 999.x numbering to stay outside the active phase sequence. Seeds are forward-looking ideas with trigger conditions that surface automatically at the right milestone.
 
 **Requirements:**
 - REQ-BACKLOG-01: Backlog items MUST use 999.x numbering to stay outside active phase sequence
-- REQ-BACKLOG-02: Phase directories MUST be created immediately so `/gsd-discuss-phase` and `/gsd-plan-phase` work on them
-- REQ-BACKLOG-03: `/gsd-review-backlog` MUST support promote, keep, and remove actions per item
+- REQ-BACKLOG-02: Phase directories MUST be created immediately so `/wsf-discuss-phase` and `/wsf-plan-phase` work on them
+- REQ-BACKLOG-03: `/wsf-review-backlog` MUST support promote, keep, and remove actions per item
 - REQ-BACKLOG-04: Promoted items MUST be renumbered into the active milestone sequence
 - REQ-SEED-01: Seeds MUST capture the full WHY and WHEN to surface conditions
-- REQ-SEED-02: `/gsd-new-milestone` MUST scan seeds and present matches
+- REQ-SEED-02: `/wsf-new-milestone` MUST scan seeds and present matches
 
 **Produces:**
 | Artifact | Description |
@@ -1107,9 +1107,9 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 44. Persistent Context Threads
 
-**Command:** `/gsd-thread [name | description]`
+**Command:** `/wsf-thread [name | description]`
 
-**Purpose:** Lightweight cross-session knowledge stores for work that spans multiple sessions but doesn't belong to any specific phase. Lighter weight than `/gsd-pause-work` — no phase state, no plan context.
+**Purpose:** Lightweight cross-session knowledge stores for work that spans multiple sessions but doesn't belong to any specific phase. Lighter weight than `/wsf-pause-work` — no phase state, no plan context.
 
 **Requirements:**
 - REQ-THREAD-01: System MUST support create, list, and resume modes
@@ -1124,9 +1124,9 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 45. PR Branch Filtering
 
-**Command:** `/gsd-pr-branch [target branch]`
+**Command:** `/wsf-pr-branch [target branch]`
 
-**Purpose:** Create a clean branch suitable for pull requests by filtering out `.planning/` commits. Reviewers see only code changes, not GSD planning artifacts.
+**Purpose:** Create a clean branch suitable for pull requests by filtering out `.planning/` commits. Reviewers see only code changes, not WSF planning artifacts.
 
 **Requirements:**
 - REQ-PRBRANCH-01: System MUST identify commits that only modify `.planning/` files
@@ -1137,7 +1137,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 46. Security Hardening
 
-**Purpose:** Defense-in-depth security for GSD's planning artifacts. Because GSD generates markdown files that become LLM system prompts, user-controlled text flowing into these files is a potential indirect prompt injection vector.
+**Purpose:** Defense-in-depth security for WSF's planning artifacts. Because WSF generates markdown files that become LLM system prompts, user-controlled text flowing into these files is a potential indirect prompt injection vector.
 
 **Components:**
 
@@ -1148,11 +1148,11 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 - Field name validation — prevents injection through config field names
 - Shell argument validation — sanitizes user text before shell interpolation
 
-**2. Prompt Injection Guard Hook** (`gsd-prompt-guard.js`)
+**2. Prompt Injection Guard Hook** (`wsf-prompt-guard.js`)
 PreToolUse hook that scans Write/Edit calls targeting `.planning/` for injection patterns. Advisory-only — logs detection for awareness without blocking legitimate operations.
 
-**3. Workflow Guard Hook** (`gsd-workflow-guard.js`)
-PreToolUse hook that detects when Claude attempts file edits outside a GSD workflow context. Advises using `/gsd-quick` or `/gsd-fast` instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
+**3. Workflow Guard Hook** (`wsf-workflow-guard.js`)
+PreToolUse hook that detects when Claude attempts file edits outside a WSF workflow context. Advises using `/wsf-quick` or `/wsf-fast` instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
 
 **4. CI-Ready Injection Scanner** (`prompt-injection-scan.test.cjs`)
 Test suite that scans all agent, workflow, and command files for embedded injection vectors.
@@ -1179,7 +1179,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 48. Discussion Audit Trail
 
-**Purpose:** Auto-generate `DISCUSSION-LOG.md` during `/gsd-discuss-phase` for full audit trail of decisions made during discussion.
+**Purpose:** Auto-generate `DISCUSSION-LOG.md` during `/wsf-discuss-phase` for full audit trail of decisions made during discussion.
 
 **Requirements:**
 - REQ-DISCLOG-01: System MUST auto-generate DISCUSSION-LOG.md during discuss-phase
@@ -1192,9 +1192,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 49. Forensics
 
-**Command:** `/gsd-forensics [description]`
+**Command:** `/wsf-forensics [description]`
 
-**Purpose:** Post-mortem investigation of failed or stuck GSD workflows.
+**Purpose:** Post-mortem investigation of failed or stuck WSF workflows.
 
 **Requirements:**
 - REQ-FORENSICS-01: System MUST analyze git history for anomalies (stuck loops, long gaps, repeated commits)
@@ -1218,7 +1218,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 50. Milestone Summary
 
-**Command:** `/gsd-milestone-summary [version]`
+**Command:** `/wsf-milestone-summary [version]`
 
 **Purpose:** Generate comprehensive project summary from milestone artifacts for team onboarding.
 
@@ -1241,7 +1241,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 51. Workstream Namespacing
 
-**Command:** `/gsd-workstreams`
+**Command:** `/wsf-workstreams`
 
 **Purpose:** Parallel workstreams for concurrent work on different milestone areas.
 
@@ -1257,14 +1257,14 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Process:**
 1. **Create** — Initialize a named workstream with isolated `.planning/workstreams/{name}/` directory
-2. **Switch** — Change active workstream context for subsequent GSD commands
+2. **Switch** — Change active workstream context for subsequent WSF commands
 3. **Manage** — List, check status, track progress, complete, or resume workstreams
 
 ---
 
 ### 52. Manager Dashboard
 
-**Command:** `/gsd-manager`
+**Command:** `/wsf-manager`
 
 **Purpose:** Interactive command center for managing multiple phases from one terminal.
 
@@ -1284,7 +1284,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 53. Assumptions Discussion Mode
 
-**Command:** `/gsd-discuss-phase` with `workflow.discuss_mode: 'assumptions'`
+**Command:** `/wsf-discuss-phase` with `workflow.discuss_mode: 'assumptions'`
 
 **Purpose:** Replace interview-style questioning with codebase-first assumption analysis.
 
@@ -1310,26 +1310,26 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 54. UI Phase Auto-Detection
 
-**Part of:** `/gsd-new-project` and `/gsd-progress`
+**Part of:** `/wsf-new-project` and `/wsf-progress`
 
-**Purpose:** Automatically detect UI-heavy projects and surface `/gsd-ui-phase` recommendation.
+**Purpose:** Automatically detect UI-heavy projects and surface `/wsf-ui-phase` recommendation.
 
 **Requirements:**
 - REQ-UI-DETECT-01: System MUST detect UI signals in project description (keywords, framework references)
 - REQ-UI-DETECT-02: System MUST annotate ROADMAP.md phases with `ui_hint` when applicable
-- REQ-UI-DETECT-03: System MUST suggest `/gsd-ui-phase` in next steps for UI-heavy phases
-- REQ-UI-DETECT-04: System MUST NOT make `/gsd-ui-phase` mandatory
+- REQ-UI-DETECT-03: System MUST suggest `/wsf-ui-phase` in next steps for UI-heavy phases
+- REQ-UI-DETECT-04: System MUST NOT make `/wsf-ui-phase` mandatory
 
 **Process:**
 1. **Detect** — Scan project description and tech stack for UI signals (keywords, framework references)
 2. **Annotate** — Add `ui_hint` markers to applicable phases in ROADMAP.md
-3. **Surface** — Include `/gsd-ui-phase` recommendation in next steps for UI-heavy phases
+3. **Surface** — Include `/wsf-ui-phase` recommendation in next steps for UI-heavy phases
 
 ---
 
 ### 55. Multi-Runtime Installer Selection
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx wsf-cc`
 
 **Purpose:** Select multiple runtimes in a single interactive install session.
 
@@ -1340,7 +1340,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 **Process:**
 1. **Detect** — Identify available AI CLI runtimes on the system
 2. **Prompt** — Present multi-select interface for runtime selection
-3. **Install** — Configure GSD for all selected runtimes in a single session
+3. **Install** — Configure WSF for all selected runtimes in a single session
 
 ---
 
@@ -1348,17 +1348,17 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 56. Windsurf Runtime Support
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx wsf-cc`
 
-**Purpose:** Add Windsurf as a supported AI CLI runtime for GSD installation and execution.
+**Purpose:** Add Windsurf as a supported AI CLI runtime for WSF installation and execution.
 
 **Requirements:**
 - REQ-WINDSURF-01: Installer MUST detect Windsurf runtime and offer it as a target
-- REQ-WINDSURF-02: GSD commands MUST function correctly within Windsurf sessions
+- REQ-WINDSURF-02: WSF commands MUST function correctly within Windsurf sessions
 
 **Process:**
 1. **Detect** — Identify Windsurf runtime availability on the system
-2. **Install** — Configure GSD skills and hooks for the Windsurf environment
+2. **Install** — Configure WSF skills and hooks for the Windsurf environment
 
 ---
 
@@ -1366,7 +1366,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Part of:** `docs/`
 
-**Purpose:** Provide GSD documentation in Portuguese, Korean, and Japanese.
+**Purpose:** Provide WSF documentation in Portuguese, Korean, and Japanese.
 
 **Requirements:**
 - REQ-I18N-01: Documentation MUST be available in Portuguese (pt), Korean (ko), and Japanese (ja)
@@ -1380,21 +1380,21 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ## v1.30 Features
 
-### 58. GSD SDK
+### 58. WSF SDK
 
 **Command:** Programmatic API (headless)
 
-**Purpose:** Headless TypeScript SDK for running GSD workflows programmatically without a CLI session.
+**Purpose:** Headless TypeScript SDK for running WSF workflows programmatically without a CLI session.
 
 **Requirements:**
-- REQ-SDK-01: SDK MUST expose GSD workflow operations as TypeScript functions
+- REQ-SDK-01: SDK MUST expose WSF workflow operations as TypeScript functions
 - REQ-SDK-02: SDK MUST support headless execution without interactive prompts
 - REQ-SDK-03: SDK MUST produce the same artifacts as CLI-driven workflows
 
 **Process:**
-1. **Import** — Import GSD SDK into a TypeScript/JavaScript project
+1. **Import** — Import WSF SDK into a TypeScript/JavaScript project
 2. **Configure** — Set project path and workflow options programmatically
-3. **Execute** — Run GSD phases (discuss, plan, execute) via API calls
+3. **Execute** — Run WSF phases (discuss, plan, execute) via API calls
 
 ---
 
@@ -1402,7 +1402,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 59. Schema Drift Detection
 
-**Command:** Automatic during `/gsd-execute-phase`
+**Command:** Automatic during `/wsf-execute-phase`
 
 **Purpose:** Detect when ORM schema files are modified without corresponding migration or push commands, preventing false-positive verification.
 
@@ -1410,7 +1410,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-SCHEMA-01: System MUST detect modifications to ORM schema files (Prisma, Drizzle, Payload, Sanity, Mongoose)
 - REQ-SCHEMA-02: System MUST verify corresponding migration/push commands exist when schema changes are detected
 - REQ-SCHEMA-03: System MUST implement two-layer defense: plan-time injection and execute-time gate
-- REQ-SCHEMA-04: System MUST support `GSD_SKIP_SCHEMA_CHECK` env var to override detection
+- REQ-SCHEMA-04: System MUST support `WSF_SKIP_SCHEMA_CHECK` env var to override detection
 - REQ-SCHEMA-05: System MUST prevent false-positive verification when schema is modified without migration
 
 **Process:**
@@ -1419,13 +1419,13 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 3. **Gate** — Block execution if schema drift is detected without migration (execute-time gate)
 4. **Inject** — Add migration reminders during plan generation (plan-time injection)
 
-**Config:** `GSD_SKIP_SCHEMA_CHECK` environment variable to bypass detection.
+**Config:** `WSF_SKIP_SCHEMA_CHECK` environment variable to bypass detection.
 
 ---
 
 ### 60. Security Enforcement
 
-**Command:** `/gsd-secure-phase <N>`
+**Command:** `/wsf-secure-phase <N>`
 
 **Purpose:** Threat-model-anchored security verification for phase implementations.
 
@@ -1433,7 +1433,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 - REQ-SEC-01: System MUST perform threat-model-anchored verification (not blind scanning)
 - REQ-SEC-02: System MUST support configurable OWASP ASVS verification levels (1-3)
 - REQ-SEC-03: System MUST block phase advancement based on configurable severity threshold
-- REQ-SEC-04: System MUST spawn `gsd-security-auditor` agent for analysis
+- REQ-SEC-04: System MUST spawn `wsf-security-auditor` agent for analysis
 
 **Produces:**
 | Artifact | Description |
@@ -1442,7 +1442,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Process:**
 1. **Model** — Build threat model from phase implementation context
-2. **Audit** — Spawn `gsd-security-auditor` to verify against threat model
+2. **Audit** — Spawn `wsf-security-auditor` to verify against threat model
 3. **Gate** — Block phase advancement if findings meet or exceed `security_block_on` severity
 
 **Config:**
@@ -1456,13 +1456,13 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 61. Documentation Generation
 
-**Command:** `/gsd-docs-update`
+**Command:** `/wsf-docs-update`
 
 **Purpose:** Generate and verify project documentation with accuracy checks.
 
 **Requirements:**
-- REQ-DOCS-01: System MUST spawn `gsd-doc-writer` agent to generate documentation
-- REQ-DOCS-02: System MUST spawn `gsd-doc-verifier` agent to check accuracy
+- REQ-DOCS-01: System MUST spawn `wsf-doc-writer` agent to generate documentation
+- REQ-DOCS-02: System MUST spawn `wsf-doc-verifier` agent to check accuracy
 - REQ-DOCS-03: System MUST verify generated documentation against actual implementation
 
 **Produces:**
@@ -1471,15 +1471,15 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 | Updated project documentation | Generated and verified documentation files |
 
 **Process:**
-1. **Generate** — Spawn `gsd-doc-writer` to create or update documentation from implementation
-2. **Verify** — Spawn `gsd-doc-verifier` to check documentation accuracy against codebase
+1. **Generate** — Spawn `wsf-doc-writer` to create or update documentation from implementation
+2. **Verify** — Spawn `wsf-doc-verifier` to check documentation accuracy against codebase
 3. **Output** — Produce verified documentation with accuracy annotations
 
 ---
 
 ### 62. Discuss Chain Mode
 
-**Flag:** `/gsd-discuss-phase <N> --chain`
+**Flag:** `/wsf-discuss-phase <N> --chain`
 
 **Purpose:** Auto-chain discuss, plan, and execute phases in one flow to reduce manual command sequencing.
 
@@ -1497,7 +1497,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 63. Single-Phase Autonomous
 
-**Flag:** `/gsd-autonomous --only N`
+**Flag:** `/wsf-autonomous --only N`
 
 **Purpose:** Execute just one phase autonomously instead of all remaining phases.
 
@@ -1515,7 +1515,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 64. Scope Reduction Detection
 
-**Part of:** `/gsd-plan-phase`
+**Part of:** `/wsf-plan-phase`
 
 **Purpose:** Prevent silent requirement dropping during plan generation with three-layer defense.
 
@@ -1534,7 +1534,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 65. Claim Provenance Tagging
 
-**Part of:** `/gsd-research-phase`
+**Part of:** `/wsf-research-phase`
 
 **Purpose:** Ensure research claims are tagged with source evidence and assumptions are logged separately.
 
@@ -1588,19 +1588,19 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 68. Claude Code Skills Migration
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx wsf-cc`
 
-**Purpose:** Migrate GSD commands to Claude Code 2.1.88+ skills format with backward compatibility.
+**Purpose:** Migrate WSF commands to Claude Code 2.1.88+ skills format with backward compatibility.
 
 **Requirements:**
-- REQ-SKILLS-01: Installer MUST write `skills/gsd-*/SKILL.md` for Claude Code 2.1.88+
-- REQ-SKILLS-02: Installer MUST auto-clean legacy `commands/gsd/` directory
+- REQ-SKILLS-01: Installer MUST write `skills/wsf-*/SKILL.md` for Claude Code 2.1.88+
+- REQ-SKILLS-02: Installer MUST auto-clean legacy `commands/wsf/` directory
 - REQ-SKILLS-03: Installer MUST maintain backward compatibility with older Claude Code versions via Gemini path
 
 **Process:**
 1. **Detect** — Check Claude Code version to determine skills support
-2. **Migrate** — Write `skills/gsd-*/SKILL.md` files for each GSD command
-3. **Clean** — Remove legacy `commands/gsd/` directory if skills are installed
+2. **Migrate** — Write `skills/wsf-*/SKILL.md` files for each WSF command
+3. **Clean** — Remove legacy `commands/wsf/` directory if skills are installed
 4. **Fallback** — Maintain Gemini path compatibility for older Claude Code versions
 
 ---
@@ -1633,7 +1633,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 70. Autonomous `--to N` Flag
 
-**Flag:** `/gsd-autonomous --to N`
+**Flag:** `/wsf-autonomous --to N`
 
 **Purpose:** Stop autonomous execution after completing a specific phase, allowing partial autonomous runs.
 
@@ -1651,7 +1651,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 71. Research Gate
 
-**Part of:** `/gsd-plan-phase`
+**Part of:** `/wsf-plan-phase`
 
 **Purpose:** Block planning when RESEARCH.md has unresolved open questions, preventing plans built on incomplete information.
 
@@ -1669,7 +1669,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 72. Verifier Milestone Scope Filtering
 
-**Part of:** `/gsd-execute-phase` (verifier step)
+**Part of:** `/wsf-execute-phase` (verifier step)
 
 **Purpose:** Distinguish between genuine gaps and items deferred to later phases, reducing false negatives in verification.
 
@@ -1700,7 +1700,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 74. Context Reduction
 
-**Part of:** GSD SDK prompt assembly
+**Part of:** WSF SDK prompt assembly
 
 **Purpose:** Reduce context prompt sizes through markdown truncation and cache-friendly prompt ordering.
 
@@ -1718,7 +1718,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 75. Discuss-Phase `--power` Flag
 
-**Flag:** `/gsd-discuss-phase --power`
+**Flag:** `/wsf-discuss-phase --power`
 
 **Purpose:** File-based bulk question answering for discuss-phase, enabling batch input from a prepared answers file.
 
@@ -1731,7 +1731,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 76. Debug `--diagnose` Flag
 
-**Flag:** `/gsd-debug --diagnose`
+**Flag:** `/wsf-debug --diagnose`
 
 **Purpose:** Diagnosis-only mode that investigates without attempting fixes.
 
@@ -1744,9 +1744,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 77. Phase Dependency Analysis
 
-**Command:** `/gsd-analyze-dependencies`
+**Command:** `/wsf-analyze-dependencies`
 
-**Purpose:** Detect phase dependencies and suggest `Depends on` entries for ROADMAP.md before running `/gsd-manager`.
+**Purpose:** Detect phase dependencies and suggest `Depends on` entries for ROADMAP.md before running `/wsf-manager`.
 
 **Requirements:**
 - REQ-DEP-01: System MUST detect file overlap between phases
@@ -1760,7 +1760,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 78. Anti-Pattern Severity Levels
 
-**Part of:** `/gsd-resume-work`
+**Part of:** `/wsf-resume-work`
 
 **Purpose:** Mandatory understanding checks at resume with severity-based anti-pattern enforcement.
 
@@ -1785,7 +1785,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 80. Planner Reachability Check
 
-**Part of:** `/gsd-plan-phase`
+**Part of:** `/wsf-plan-phase`
 
 **Purpose:** Validate that plan steps are achievable before committing to execution.
 
@@ -1797,7 +1797,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 81. Playwright-MCP UI Verification
 
-**Part of:** `/gsd-verify-work` (optional)
+**Part of:** `/wsf-verify-work` (optional)
 
 **Purpose:** Automated visual verification using Playwright-MCP during verify-phase.
 
@@ -1810,7 +1810,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 82. Pause-Work Expansion
 
-**Part of:** `/gsd-pause-work`
+**Part of:** `/wsf-pause-work`
 
 **Purpose:** Support non-phase contexts with richer handoff data for broader pause-work applicability.
 
@@ -1851,9 +1851,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 85. New Runtime Support (Trae, Cline, Augment Code)
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx wsf-cc`
 
-**Purpose:** Extend GSD installation to Trae IDE, Cline, and Augment Code runtimes.
+**Purpose:** Extend WSF installation to Trae IDE, Cline, and Augment Code runtimes.
 
 **Requirements:**
 - REQ-TRAE-01: Installer MUST support `--trae` flag for Trae IDE installation
@@ -1864,7 +1864,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 86. Autonomous `--interactive` Flag
 
-**Flag:** `/gsd-autonomous --interactive`
+**Flag:** `/wsf-autonomous --interactive`
 
 **Purpose:** Lean-context autonomous mode that keeps discuss-phase interactive (user answers questions) while dispatching plan and execute as background agents.
 
@@ -1883,7 +1883,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 87. Commit-Docs Guard Hook
 
-**Hook:** `gsd-commit-docs.js`
+**Hook:** `wsf-commit-docs.js`
 
 **Purpose:** PreToolUse hook that enforces the `commit_docs` configuration, preventing `.planning/` files from being committed when `planning.commit_docs` is `false`.
 
@@ -1896,15 +1896,15 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 88. Community Hooks Opt-In
 
-**Hooks:** `gsd-validate-commit.sh`, `gsd-session-state.sh`, `gsd-phase-boundary.sh`
+**Hooks:** `wsf-validate-commit.sh`, `wsf-session-state.sh`, `wsf-phase-boundary.sh`
 
-**Purpose:** Optional git and session hooks for GSD projects, gated behind `hooks.community: true` in config.
+**Purpose:** Optional git and session hooks for WSF projects, gated behind `hooks.community: true` in config.
 
 **Requirements:**
 - REQ-COMMUNITY-01: All community hooks MUST be no-ops unless `hooks.community` is `true` in `.planning/config.json`
-- REQ-COMMUNITY-02: `gsd-validate-commit.sh` MUST enforce Conventional Commits format on git commit messages
-- REQ-COMMUNITY-03: `gsd-session-state.sh` MUST track session state transitions
-- REQ-COMMUNITY-04: `gsd-phase-boundary.sh` MUST enforce phase boundary checks
+- REQ-COMMUNITY-02: `wsf-validate-commit.sh` MUST enforce Conventional Commits format on git commit messages
+- REQ-COMMUNITY-03: `wsf-session-state.sh` MUST track session state transitions
+- REQ-COMMUNITY-04: `wsf-phase-boundary.sh` MUST enforce phase boundary checks
 
 **Config:**
 | Setting | Type | Default | Description |
@@ -1927,7 +1927,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
   - [Autonomous Audit-to-Fix](#98-autonomous-audit-to-fix)
   - [Improved Prompt Injection Scanner](#99-improved-prompt-injection-scanner)
   - [Stall Detection in Plan-Phase](#100-stall-detection-in-plan-phase)
-  - [Hard Stop Safety Gates in /gsd-next](#101-hard-stop-safety-gates-in-gsd-next)
+  - [Hard Stop Safety Gates in /wsf-next](#101-hard-stop-safety-gates-in-wsf-next)
   - [Adaptive Model Preset](#102-adaptive-model-preset)
   - [Post-Merge Hunk Verification](#103-post-merge-hunk-verification)
 
@@ -1956,7 +1956,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 90. Queryable Codebase Intelligence
 
-**Command:** `/gsd-intel [query <term>|status|diff|refresh]`
+**Command:** `/wsf-intel [query <term>|status|diff|refresh]`
 **Config:** `intel.enabled`
 
 **Purpose:** Maintain a queryable JSON index of codebase structure, API surface, dependency graph, file roles, and architecture decisions in `.planning/intel/`. Enables targeted lookups without reading the entire codebase.
@@ -2002,7 +2002,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 92. Gates Taxonomy
 
-**References:** `get-shit-done/references/gates.md`
+**References:** `wsf/references/gates.md`
 **Agents:** plan-checker, verifier
 
 **Purpose:** Define 4 canonical gate types that structure all workflow decision points, enabling plan-checker and verifier agents to apply consistent gate logic.
@@ -2024,15 +2024,15 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 93. Code Review Pipeline
 
-**Commands:** `/gsd-code-review`, `/gsd-code-review-fix`
+**Commands:** `/wsf-code-review`, `/wsf-code-review-fix`
 
 **Purpose:** Structured review of source files changed during a phase, with a separate auto-fix pass that commits each fix atomically.
 
 **Requirements:**
-- REQ-REVIEW-01: `gsd-code-review` MUST scope files to the phase using SUMMARY.md and git diff fallback
+- REQ-REVIEW-01: `wsf-code-review` MUST scope files to the phase using SUMMARY.md and git diff fallback
 - REQ-REVIEW-02: Review MUST support three depth levels: `quick`, `standard`, `deep`
 - REQ-REVIEW-03: Findings MUST be severity-classified: Critical, Warning, Info
-- REQ-REVIEW-04: `gsd-code-review-fix` MUST read REVIEW.md and fix Critical + Warning findings by default
+- REQ-REVIEW-04: `wsf-code-review-fix` MUST read REVIEW.md and fix Critical + Warning findings by default
 - REQ-REVIEW-05: Each fix MUST be committed atomically with a descriptive message
 - REQ-REVIEW-06: `--auto` flag MUST enable fix + re-review iteration loop, capped at 3 iterations
 - REQ-REVIEW-07: Feature MUST be gated by `workflow.code_review` config flag
@@ -2047,13 +2047,13 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 94. Socratic Exploration
 
-**Command:** `/gsd-explore [topic]`
+**Command:** `/wsf-explore [topic]`
 
-**Purpose:** Guide a developer through exploring an idea via Socratic probing questions before committing to a plan. Routes outputs to the appropriate GSD artifact: notes, todos, seeds, research questions, requirements updates, or a new phase.
+**Purpose:** Guide a developer through exploring an idea via Socratic probing questions before committing to a plan. Routes outputs to the appropriate WSF artifact: notes, todos, seeds, research questions, requirements updates, or a new phase.
 
 **Requirements:**
 - REQ-EXPLORE-01: Exploration MUST use Socratic probing — ask questions before proposing solutions
-- REQ-EXPLORE-02: Session MUST offer to route outputs to the appropriate GSD artifact
+- REQ-EXPLORE-02: Session MUST offer to route outputs to the appropriate WSF artifact
 - REQ-EXPLORE-03: An optional topic argument MUST prime the first question
 - REQ-EXPLORE-04: Exploration MUST optionally spawn a research agent for technical feasibility
 
@@ -2061,14 +2061,14 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 95. Safe Undo
 
-**Command:** `/gsd-undo --last N | --phase NN | --plan NN-MM`
+**Command:** `/wsf-undo --last N | --phase NN | --plan NN-MM`
 
-**Purpose:** Roll back GSD phase or plan commits safely using the phase manifest and git log, with dependency checks and a hard confirmation gate before any revert is applied.
+**Purpose:** Roll back WSF phase or plan commits safely using the phase manifest and git log, with dependency checks and a hard confirmation gate before any revert is applied.
 
 **Requirements:**
 - REQ-UNDO-01: `--phase` mode MUST identify all commits for the phase via manifest and git log fallback
 - REQ-UNDO-02: `--plan` mode MUST identify all commits for a specific plan
-- REQ-UNDO-03: `--last N` mode MUST display recent GSD commits for interactive selection
+- REQ-UNDO-03: `--last N` mode MUST display recent WSF commits for interactive selection
 - REQ-UNDO-04: System MUST check for dependent phases/plans before reverting
 - REQ-UNDO-05: A confirmation gate MUST be shown before any git revert is executed
 
@@ -2076,34 +2076,34 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 96. Plan Import
 
-**Command:** `/gsd-import --from <filepath>`
+**Command:** `/wsf-import --from <filepath>`
 
-**Purpose:** Ingest an external plan file into the GSD planning system with conflict detection against `PROJECT.md` decisions, converting it to a valid GSD PLAN.md and validating it through the plan-checker.
+**Purpose:** Ingest an external plan file into the WSF planning system with conflict detection against `PROJECT.md` decisions, converting it to a valid WSF PLAN.md and validating it through the plan-checker.
 
 **Requirements:**
 - REQ-IMPORT-01: Importer MUST detect conflicts between the external plan and existing PROJECT.md decisions
 - REQ-IMPORT-02: All detected conflicts MUST be presented to the user for resolution before writing
-- REQ-IMPORT-03: Imported plan MUST be written as a valid GSD PLAN.md format
-- REQ-IMPORT-04: Written plan MUST pass `gsd-plan-checker` validation
+- REQ-IMPORT-03: Imported plan MUST be written as a valid WSF PLAN.md format
+- REQ-IMPORT-04: Written plan MUST pass `wsf-plan-checker` validation
 
 ---
 
 ### 97. Rapid Codebase Scan
 
-**Command:** `/gsd-scan [--focus tech|arch|quality|concerns|tech+arch]`
+**Command:** `/wsf-scan [--focus tech|arch|quality|concerns|tech+arch]`
 
-**Purpose:** Lightweight alternative to `/gsd-map-codebase` that spawns a single mapper agent for a specific focus area, producing targeted output in `.planning/codebase/` without the overhead of 4 parallel agents.
+**Purpose:** Lightweight alternative to `/wsf-map-codebase` that spawns a single mapper agent for a specific focus area, producing targeted output in `.planning/codebase/` without the overhead of 4 parallel agents.
 
 **Requirements:**
 - REQ-SCAN-01: Scan MUST spawn exactly one mapper agent (not four parallel agents)
 - REQ-SCAN-02: Focus area MUST be one of: `tech`, `arch`, `quality`, `concerns`, `tech+arch` (default)
-- REQ-SCAN-03: Output MUST be written to `.planning/codebase/` in the same format as `/gsd-map-codebase`
+- REQ-SCAN-03: Output MUST be written to `.planning/codebase/` in the same format as `/wsf-map-codebase`
 
 ---
 
 ### 98. Autonomous Audit-to-Fix
 
-**Command:** `/gsd-audit-fix [--source <audit>] [--severity high|medium|all] [--max N] [--dry-run]`
+**Command:** `/wsf-audit-fix [--source <audit>] [--severity high|medium|all] [--max N] [--dry-run]`
 
 **Purpose:** End-to-end pipeline that runs an audit, classifies findings as auto-fixable vs. manual-only, then autonomously fixes auto-fixable issues with test verification and atomic commits.
 
@@ -2118,7 +2118,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 99. Improved Prompt Injection Scanner
 
-**Hook:** `gsd-prompt-guard.js`
+**Hook:** `wsf-prompt-guard.js`
 **Script:** `scripts/prompt-injection-scan.sh`
 
 **Purpose:** Enhanced detection of prompt injection attempts in planning artifacts, adding invisible Unicode character detection, encoding obfuscation patterns, and entropy-based analysis.
@@ -2133,7 +2133,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 100. Stall Detection in Plan-Phase
 
-**Command:** `/gsd-plan-phase`
+**Command:** `/wsf-plan-phase`
 
 **Purpose:** Detect when the planner revision loop has stalled — producing the same output across multiple iterations — and break the cycle by escalating to a different strategy or exiting with a clear diagnostic.
 
@@ -2144,14 +2144,14 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ---
 
-### 101. Hard Stop Safety Gates in /gsd-next
+### 101. Hard Stop Safety Gates in /wsf-next
 
-**Command:** `/gsd-next`
+**Command:** `/wsf-next`
 
-**Purpose:** Prevent `/gsd-next` from entering runaway loops by adding hard stop safety gates and a consecutive-call guard that interrupts autonomous chaining when repeated identical steps are detected.
+**Purpose:** Prevent `/wsf-next` from entering runaway loops by adding hard stop safety gates and a consecutive-call guard that interrupts autonomous chaining when repeated identical steps are detected.
 
 **Requirements:**
-- REQ-NEXT-GATE-01: `/gsd-next` MUST track consecutive same-step calls
+- REQ-NEXT-GATE-01: `/wsf-next` MUST track consecutive same-step calls
 - REQ-NEXT-GATE-02: On repeated same-step, system MUST present a hard stop gate to the user
 - REQ-NEXT-GATE-03: User MUST explicitly confirm to continue past a hard stop gate
 
@@ -2165,13 +2165,13 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Requirements:**
 - REQ-ADAPTIVE-01: `adaptive` preset MUST assign model tiers based on agent role (planner → quality tier, executor → balanced tier, etc.)
-- REQ-ADAPTIVE-02: `adaptive` MUST be selectable via `/gsd-set-profile adaptive`
+- REQ-ADAPTIVE-02: `adaptive` MUST be selectable via `/wsf-set-profile adaptive`
 
 ---
 
 ### 103. Post-Merge Hunk Verification
 
-**Command:** `/gsd-reapply-patches`
+**Command:** `/wsf-reapply-patches`
 
 **Purpose:** After applying local patches post-update, verify that all hunks were actually applied by comparing the expected patch content against the live filesystem. Surface any dropped or partial hunks immediately rather than silently accepting incomplete merges.
 

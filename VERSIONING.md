@@ -1,14 +1,14 @@
 # Versioning & Release Strategy
 
-GSD follows [Semantic Versioning 2.0.0](https://semver.org/) with three release tiers mapped to npm dist-tags.
+WSF follows [Semantic Versioning 2.0.0](https://semver.org/) with three release tiers mapped to npm dist-tags.
 
 ## Release Tiers
 
 | Tier | What ships | Version format | npm tag | Branch | Install |
 |------|-----------|---------------|---------|--------|---------|
-| **Patch** | Bug fixes only | `1.27.1` | `latest` | `hotfix/1.27.1` | `npx get-shit-done-cc@latest` |
-| **Minor** | Fixes + enhancements | `1.28.0` | `latest` (after RC) | `release/1.28.0` | `npx get-shit-done-cc@next` (RC) |
-| **Major** | Fixes + enhancements + features | `2.0.0` | `latest` (after beta) | `release/2.0.0` | `npx get-shit-done-cc@next` (beta) |
+| **Patch** | Bug fixes only | `1.27.1` | `latest` | `hotfix/1.27.1` | `npx wsf-cc@latest` |
+| **Minor** | Fixes + enhancements | `1.28.0` | `latest` (after RC) | `release/1.28.0` | `npx wsf-cc@next` (RC) |
+| **Major** | Fixes + enhancements + features | `2.0.0` | `latest` (after beta) | `release/2.0.0` | `npx wsf-cc@next` (beta) |
 
 ## npm Dist-Tags
 
@@ -16,8 +16,8 @@ Only two tags, following Angular/Next.js convention:
 
 | Tag | Meaning | Installed by |
 |-----|---------|-------------|
-| `latest` | Stable production release | `npm install get-shit-done-cc` (default) |
-| `next` | Pre-release (RC or beta) | `npm install get-shit-done-cc@next` (opt-in) |
+| `latest` | Stable production release | `npm install wsf-cc` (default) |
+| `next` | Pre-release (RC or beta) | `npm install wsf-cc@next` (opt-in) |
 
 The version string (`-rc.1` vs `-beta.1`) communicates stability level. Users never get pre-releases unless they explicitly opt in.
 
@@ -84,7 +84,7 @@ For accumulated fixes and enhancements.
 1. Trigger `release.yml` with action `create` and version (e.g., `1.28.0`)
 2. Workflow creates `release/1.28.0` branch from main, bumps package.json
 3. Trigger `release.yml` with action `rc` to publish `1.28.0-rc.1` to `next`
-4. Test the RC: `npx get-shit-done-cc@next`
+4. Test the RC: `npx wsf-cc@next`
 5. If issues found: fix on release branch, publish `rc.2`, `rc.3`, etc.
 6. Trigger `release.yml` with action `finalize` — publishes `1.28.0` to `latest`
 7. Merge release branch to main
@@ -122,5 +122,5 @@ npm publish
 npm publish --tag next
 
 # Verify what latest and next point to
-npm dist-tag ls get-shit-done-cc
+npm dist-tag ls wsf-cc
 ```

@@ -1,4 +1,4 @@
-# GSD Agent Reference
+# WSF Agent Reference
 
 > All 21 specialized agents — roles, tools, spawn patterns, and relationships. For architecture context, see [Architecture](ARCHITECTURE.md).
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-GSD uses a multi-agent architecture where thin orchestrators (workflow files) spawn specialized agents with fresh context windows. Each agent has a focused role, limited tool access, and produces specific artifacts.
+WSF uses a multi-agent architecture where thin orchestrators (workflow files) spawn specialized agents with fresh context windows. Each agent has a focused role, limited tool access, and produces specific artifacts.
 
 ### Agent Categories
 
@@ -30,13 +30,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ## Agent Details
 
-### gsd-project-researcher
+### wsf-project-researcher
 
 **Role:** Researches domain ecosystem before roadmap creation.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-new-project`, `/gsd-new-milestone` |
+| **Spawned by** | `/wsf-new-project`, `/wsf-new-milestone` |
 | **Parallelism** | 4 instances (stack, features, architecture, pitfalls) |
 | **Tools** | Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp (context7) |
 | **Model (balanced)** | Sonnet |
@@ -49,13 +49,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-phase-researcher
+### wsf-phase-researcher
 
 **Role:** Researches how to implement a specific phase before planning.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-plan-phase` |
+| **Spawned by** | `/wsf-plan-phase` |
 | **Parallelism** | 4 instances (same focus areas as project researcher) |
 | **Tools** | Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp (context7) |
 | **Model (balanced)** | Sonnet |
@@ -68,13 +68,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-ui-researcher
+### wsf-ui-researcher
 
 **Role:** Produces UI design contracts for frontend phases.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-ui-phase` |
+| **Spawned by** | `/wsf-ui-phase` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp (context7) |
 | **Model (balanced)** | Sonnet |
@@ -89,7 +89,7 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-assumptions-analyzer
+### wsf-assumptions-analyzer
 
 **Role:** Deeply analyzes codebase for a phase and returns structured assumptions with evidence, confidence levels, and consequences if wrong.
 
@@ -112,7 +112,7 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-advisor-researcher
+### wsf-advisor-researcher
 
 **Role:** Researches a single gray area decision during discuss-phase advisor mode and returns a structured comparison table.
 
@@ -134,13 +134,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-research-synthesizer
+### wsf-research-synthesizer
 
 **Role:** Combines outputs from parallel researchers into a unified summary.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-new-project` (after 4 researchers complete) |
+| **Spawned by** | `/wsf-new-project` (after 4 researchers complete) |
 | **Parallelism** | Single instance (sequential after researchers) |
 | **Tools** | Read, Write, Bash |
 | **Model (balanced)** | Sonnet |
@@ -149,13 +149,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-planner
+### wsf-planner
 
 **Role:** Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-plan-phase`, `/gsd-quick` |
+| **Spawned by** | `/wsf-plan-phase`, `/wsf-quick` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Bash, Glob, Grep, WebFetch, mcp (context7) |
 | **Model (balanced)** | Opus |
@@ -172,13 +172,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-roadmapper
+### wsf-roadmapper
 
 **Role:** Creates project roadmaps with phase breakdown and requirement mapping.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-new-project` |
+| **Spawned by** | `/wsf-new-project` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Bash, Glob, Grep |
 | **Model (balanced)** | Sonnet |
@@ -193,13 +193,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-executor
+### wsf-executor
 
-**Role:** Executes GSD plans with atomic commits, deviation handling, and checkpoint protocols.
+**Role:** Executes WSF plans with atomic commits, deviation handling, and checkpoint protocols.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-execute-phase`, `/gsd-quick` |
+| **Spawned by** | `/wsf-execute-phase`, `/wsf-quick` |
 | **Parallelism** | Multiple (parallel within waves, sequential across waves) |
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -216,13 +216,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-plan-checker
+### wsf-plan-checker
 
 **Role:** Verifies plans will achieve phase goals before execution.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-plan-phase` (verification loop, max 3 iterations) |
+| **Spawned by** | `/wsf-plan-phase` (verification loop, max 3 iterations) |
 | **Parallelism** | Single instance (iterative) |
 | **Tools** | Read, Bash, Glob, Grep |
 | **Model (balanced)** | Sonnet |
@@ -241,13 +241,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-integration-checker
+### wsf-integration-checker
 
 **Role:** Verifies cross-phase integration and end-to-end flows.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-audit-milestone` |
+| **Spawned by** | `/wsf-audit-milestone` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -256,13 +256,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-ui-checker
+### wsf-ui-checker
 
 **Role:** Validates UI-SPEC.md design contracts against quality dimensions.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-ui-phase` (validation loop, max 2 iterations) |
+| **Spawned by** | `/wsf-ui-phase` (validation loop, max 2 iterations) |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Bash, Glob, Grep |
 | **Model (balanced)** | Sonnet |
@@ -271,13 +271,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-verifier
+### wsf-verifier
 
 **Role:** Verifies phase goal achievement through goal-backward analysis.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-execute-phase` (after all executors complete) |
+| **Spawned by** | `/wsf-execute-phase` (after all executors complete) |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -287,19 +287,19 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 **Key behaviors:**
 - Checks codebase against phase goals, not just task completion
 - PASS/FAIL with specific evidence
-- Logs issues for `/gsd-verify-work` to address
+- Logs issues for `/wsf-verify-work` to address
 - Milestone scope filtering: gaps addressed in later phases are marked as "deferred", not reported as failures (v1.32)
 - **Test quality audit** (v1.32): verifies that tests prove what they claim by checking for disabled/skipped tests on requirements, circular test patterns (system generating its own expected values), assertion strength (existence vs. value vs. behavioral), and expected value provenance. Blockers from test quality audit override an otherwise passing verification
 
 ---
 
-### gsd-nyquist-auditor
+### wsf-nyquist-auditor
 
 **Role:** Fills Nyquist validation gaps by generating tests.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-validate-phase` |
+| **Spawned by** | `/wsf-validate-phase` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -312,13 +312,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-ui-auditor
+### wsf-ui-auditor
 
 **Role:** Retroactive 6-pillar visual audit of implemented frontend code.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-ui-review` |
+| **Spawned by** | `/wsf-ui-review` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -335,13 +335,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-codebase-mapper
+### wsf-codebase-mapper
 
 **Role:** Explores codebase and writes structured analysis documents.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-map-codebase` |
+| **Spawned by** | `/wsf-map-codebase` |
 | **Parallelism** | 4 instances (tech, architecture, quality, concerns) |
 | **Tools** | Read, Bash, Grep, Glob, Write |
 | **Model (balanced)** | Haiku |
@@ -355,13 +355,13 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-debugger
+### wsf-debugger
 
 **Role:** Investigates bugs using scientific method with persistent state.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-debug`, `/gsd-verify-work` (for failures) |
+| **Spawned by** | `/wsf-debug`, `/wsf-verify-work` (for failures) |
 | **Parallelism** | Single instance (interactive) |
 | **Tools** | Read, Write, Edit, Bash, Grep, Glob, WebSearch |
 | **Model (balanced)** | Sonnet |
@@ -380,18 +380,18 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ---
 
-### gsd-user-profiler
+### wsf-user-profiler
 
 **Role:** Analyzes session messages across 8 behavioral dimensions to produce a scored developer profile.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-profile-user` |
+| **Spawned by** | `/wsf-profile-user` |
 | **Parallelism** | Single instance |
 | **Tools** | Read |
 | **Model (balanced)** | Sonnet |
 | **Color** | Magenta |
-| **Produces** | `USER-PROFILE.md`, `/gsd-dev-preferences`, `CLAUDE.md` profile section |
+| **Produces** | `USER-PROFILE.md`, `/wsf-dev-preferences`, `CLAUDE.md` profile section |
 
 **Behavioral Dimensions:**
 Communication style, decision patterns, debugging approach, UX preferences, vendor choices, frustration triggers, learning style, explanation depth.
@@ -403,13 +403,13 @@ Communication style, decision patterns, debugging approach, UX preferences, vend
 
 ---
 
-### gsd-doc-writer
+### wsf-doc-writer
 
 **Role:** Writes and updates project documentation. Spawned with a doc_assignment block specifying doc type, mode, and project context.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-docs-update` |
+| **Spawned by** | `/wsf-docs-update` |
 | **Parallelism** | Multiple instances (one per doc type) |
 | **Tools** | Read, Write, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -420,18 +420,18 @@ Communication style, decision patterns, debugging approach, UX preferences, vend
 - Supports modes: create, update, supplement, fix
 - Handles doc types: readme, architecture, getting_started, development, testing, api, configuration, deployment, contributing, custom
 - Monorepo-aware: can generate per-package READMEs
-- Fix mode accepts failure objects from gsd-doc-verifier for targeted corrections
+- Fix mode accepts failure objects from wsf-doc-verifier for targeted corrections
 - Writes directly to disk — does not return content to orchestrator
 
 ---
 
-### gsd-doc-verifier
+### wsf-doc-verifier
 
 **Role:** Verifies factual claims in generated documentation against the live codebase.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-docs-update` (after doc-writer completes) |
+| **Spawned by** | `/wsf-docs-update` (after doc-writer completes) |
 | **Parallelism** | Multiple instances (one per doc file) |
 | **Tools** | Read, Write, Bash, Grep, Glob |
 | **Model (balanced)** | Sonnet |
@@ -446,13 +446,13 @@ Communication style, decision patterns, debugging approach, UX preferences, vend
 
 ---
 
-### gsd-security-auditor
+### wsf-security-auditor
 
 **Role:** Verifies threat mitigations from PLAN.md threat model exist in implemented code.
 
 | Property | Value |
 |----------|-------|
-| **Spawned by** | `/gsd-secure-phase` |
+| **Spawned by** | `/wsf-secure-phase` |
 | **Parallelism** | Single instance |
 | **Tools** | Read, Write, Edit, Bash, Glob, Grep |
 | **Model (balanced)** | Sonnet |

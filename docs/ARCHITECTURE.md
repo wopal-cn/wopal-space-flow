@@ -1,4 +1,4 @@
-# GSD Architecture
+# WSF Architecture
 
 > System architecture for contributors and advanced users. For user-facing documentation, see [Feature Reference](FEATURES.md) or [User Guide](USER-GUIDE.md).
 
@@ -21,7 +21,7 @@
 
 ## System Overview
 
-GSD is a **meta-prompting framework** that sits between the user and AI coding agents (Claude Code, Gemini CLI, OpenCode, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code). It provides:
+WSF is a **meta-prompting framework** that sits between the user and AI coding agents (Claude Code, Gemini CLI, OpenCode, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code). It provides:
 
 1. **Context engineering** — Structured artifacts that give the AI everything it needs per task
 2. **Multi-agent orchestration** — Thin orchestrators that spawn specialized agents with fresh context windows
@@ -31,18 +31,18 @@ GSD is a **meta-prompting framework** that sits between the user and AI coding a
 ```
 ┌──────────────────────────────────────────────────────┐
 │                      USER                            │
-│            /gsd-command [args]                        │
+│            /wsf-command [args]                        │
 └─────────────────────┬────────────────────────────────┘
                       │
 ┌─────────────────────▼────────────────────────────────┐
 │              COMMAND LAYER                            │
-│   commands/gsd/*.md — Prompt-based command files      │
+│   commands/wsf/*.md — Prompt-based command files      │
 │   (Claude Code custom commands / Codex skills)        │
 └─────────────────────┬────────────────────────────────┘
                       │
 ┌─────────────────────▼────────────────────────────────┐
 │              WORKFLOW LAYER                           │
-│   get-shit-done/workflows/*.md — Orchestration logic  │
+│   wsf/workflows/*.md — Orchestration logic  │
 │   (Reads references, spawns agents, manages state)    │
 └──────┬──────────────┬─────────────────┬──────────────┘
        │              │                 │
@@ -54,7 +54,7 @@ GSD is a **meta-prompting framework** that sits between the user and AI coding a
        │              │                 │
 ┌──────▼──────────────▼─────────────────▼──────────────┐
 │              CLI TOOLS LAYER                          │
-│   get-shit-done/bin/gsd-tools.cjs                     │
+│   wsf/bin/wsf-tools.cjs                     │
 │   (State, config, phase, roadmap, verify, templates)  │
 └──────────────────────┬───────────────────────────────┘
                        │
@@ -75,8 +75,8 @@ Every agent spawned by an orchestrator gets a clean context window (up to 200K t
 
 ### 2. Thin Orchestrators
 
-Workflow files (`get-shit-done/workflows/*.md`) never do heavy lifting. They:
-- Load context via `gsd-tools.cjs init <workflow>`
+Workflow files (`wsf/workflows/*.md`) never do heavy lifting. They:
+- Load context via `wsf-tools.cjs init <workflow>`
 - Spawn specialized agents with focused prompts
 - Collect results and route to the next step
 - Update state between steps
@@ -104,21 +104,21 @@ Multiple layers prevent common failure modes:
 
 ## Component Architecture
 
-### Commands (`commands/gsd/*.md`)
+### Commands (`commands/wsf/*.md`)
 
 User-facing entry points. Each file contains YAML frontmatter (name, description, allowed-tools) and a prompt body that bootstraps the workflow. Commands are installed as:
-- **Claude Code:** Custom slash commands (`/gsd-command-name`)
-- **OpenCode / Kilo:** Slash commands (`/gsd-command-name`)
-- **Codex:** Skills (`$gsd-command-name`)
-- **Copilot:** Slash commands (`/gsd-command-name`)
+- **Claude Code:** Custom slash commands (`/wsf-command-name`)
+- **OpenCode / Kilo:** Slash commands (`/wsf-command-name`)
+- **Codex:** Skills (`$wsf-command-name`)
+- **Copilot:** Slash commands (`/wsf-command-name`)
 - **Antigravity:** Skills
 
 **Total commands:** 69
 
-### Workflows (`get-shit-done/workflows/*.md`)
+### Workflows (`wsf/workflows/*.md`)
 
 Orchestration logic that commands reference. Contains the step-by-step process including:
-- Context loading via `gsd-tools.cjs init`
+- Context loading via `wsf-tools.cjs init`
 - Agent spawn instructions with model resolution
 - Gate/checkpoint definitions
 - State update patterns
@@ -136,7 +136,7 @@ Specialized agent definitions with frontmatter specifying:
 
 **Total agents:** 24
 
-### References (`get-shit-done/references/*.md`)
+### References (`wsf/references/*.md`)
 
 Shared knowledge documents that workflows and agents `@-reference` (35 total):
 
@@ -172,7 +172,7 @@ Shared knowledge documents that workflows and agents `@-reference` (35 total):
 
 **Thinking model references:**
 
-References for integrating thinking-class models (o3, o4-mini, Gemini 2.5 Pro) into GSD workflows:
+References for integrating thinking-class models (o3, o4-mini, Gemini 2.5 Pro) into WSF workflows:
 
 - `thinking-models-debug.md` — Thinking model patterns for debugging workflows
 - `thinking-models-execution.md` — Thinking model patterns for execution agents
@@ -182,15 +182,15 @@ References for integrating thinking-class models (o3, o4-mini, Gemini 2.5 Pro) i
 
 **Modular planner decomposition:**
 
-The planner agent (`agents/gsd-planner.md`) was decomposed from a single monolithic file into a core agent plus reference modules to stay under the 50K character limit imposed by some runtimes:
+The planner agent (`agents/wsf-planner.md`) was decomposed from a single monolithic file into a core agent plus reference modules to stay under the 50K character limit imposed by some runtimes:
 
 - `planner-gap-closure.md` — Gap closure mode behavior (reads VERIFICATION.md, targeted replanning)
-- `planner-reviews.md` — Cross-AI review integration (reads REVIEWS.md from `/gsd-review`)
+- `planner-reviews.md` — Cross-AI review integration (reads REVIEWS.md from `/wsf-review`)
 - `planner-revision.md` — Plan revision patterns for iterative refinement
 
-### Templates (`get-shit-done/templates/`)
+### Templates (`wsf/templates/`)
 
-Markdown templates for all planning artifacts. Used by `gsd-tools.cjs template fill` and `scaffold` commands to create pre-structured files:
+Markdown templates for all planning artifacts. Used by `wsf-tools.cjs template fill` and `scaffold` commands to create pre-structured files:
 - `project.md`, `requirements.md`, `roadmap.md`, `state.md` — Core project files
 - `phase-prompt.md` — Phase execution prompt template
 - `summary.md` (+ `summary-minimal.md`, `summary-standard.md`, `summary-complex.md`) — Granularity-aware summary templates
@@ -206,19 +206,19 @@ Runtime hooks that integrate with the host AI agent:
 
 | Hook | Event | Purpose |
 |------|-------|---------|
-| `gsd-statusline.js` | `statusLine` | Displays model, task, directory, and context usage bar |
-| `gsd-context-monitor.js` | `PostToolUse` / `AfterTool` | Injects agent-facing context warnings at 35%/25% remaining |
-| `gsd-check-update.js` | `SessionStart` | Background check for new GSD versions |
-| `gsd-prompt-guard.js` | `PreToolUse` | Scans `.planning/` writes for prompt injection patterns (advisory) |
-| `gsd-workflow-guard.js` | `PreToolUse` | Detects file edits outside GSD workflow context (advisory, opt-in via `hooks.workflow_guard`) |
-| `gsd-read-guard.js` | `PreToolUse` | Advisory guard preventing Edit/Write on files not yet read in the session |
-| `gsd-session-state.sh` | `PostToolUse` | Session state tracking for shell-based runtimes |
-| `gsd-validate-commit.sh` | `PostToolUse` | Commit validation for conventional commit enforcement |
-| `gsd-phase-boundary.sh` | `PostToolUse` | Phase boundary detection for workflow transitions |
+| `wsf-statusline.js` | `statusLine` | Displays model, task, directory, and context usage bar |
+| `wsf-context-monitor.js` | `PostToolUse` / `AfterTool` | Injects agent-facing context warnings at 35%/25% remaining |
+| `wsf-check-update.js` | `SessionStart` | Background check for new WSF versions |
+| `wsf-prompt-guard.js` | `PreToolUse` | Scans `.planning/` writes for prompt injection patterns (advisory) |
+| `wsf-workflow-guard.js` | `PreToolUse` | Detects file edits outside WSF workflow context (advisory, opt-in via `hooks.workflow_guard`) |
+| `wsf-read-guard.js` | `PreToolUse` | Advisory guard preventing Edit/Write on files not yet read in the session |
+| `wsf-session-state.sh` | `PostToolUse` | Session state tracking for shell-based runtimes |
+| `wsf-validate-commit.sh` | `PostToolUse` | Commit validation for conventional commit enforcement |
+| `wsf-phase-boundary.sh` | `PostToolUse` | Phase boundary detection for workflow transitions |
 
-### CLI Tools (`get-shit-done/bin/`)
+### CLI Tools (`wsf/bin/`)
 
-Node.js CLI utility (`gsd-tools.cjs`) with 19 domain modules:
+Node.js CLI utility (`wsf-tools.cjs`) with 19 domain modules:
 
 | Module | Responsibility |
 |--------|---------------|
@@ -251,10 +251,10 @@ Node.js CLI utility (`gsd-tools.cjs`) with 19 domain modules:
 ```
 Orchestrator (workflow .md)
     │
-    ├── Load context: gsd-tools.cjs init <workflow> <phase>
+    ├── Load context: wsf-tools.cjs init <workflow> <phase>
     │   Returns JSON with: project info, config, state, phase details
     │
-    ├── Resolve model: gsd-tools.cjs resolve-model <agent-name>
+    ├── Resolve model: wsf-tools.cjs resolve-model <agent-name>
     │   Returns: opus | sonnet | haiku | inherit
     │
     ├── Spawn Agent (Task/SubAgent call)
@@ -265,25 +265,25 @@ Orchestrator (workflow .md)
     │
     ├── Collect result
     │
-    └── Update state: gsd-tools.cjs state update/patch/advance-plan
+    └── Update state: wsf-tools.cjs state update/patch/advance-plan
 ```
 
 ### Agent Spawn Categories
 
 | Category | Agents | Parallelism |
 |----------|--------|-------------|
-| **Researchers** | gsd-project-researcher, gsd-phase-researcher, gsd-ui-researcher, gsd-advisor-researcher | 4 parallel (stack, features, architecture, pitfalls); advisor spawns during discuss-phase |
-| **Synthesizers** | gsd-research-synthesizer | Sequential (after researchers complete) |
-| **Planners** | gsd-planner, gsd-roadmapper | Sequential |
-| **Checkers** | gsd-plan-checker, gsd-integration-checker, gsd-ui-checker, gsd-nyquist-auditor | Sequential (verification loop, max 3 iterations) |
-| **Executors** | gsd-executor | Parallel within waves, sequential across waves |
-| **Verifiers** | gsd-verifier | Sequential (after all executors complete) |
-| **Mappers** | gsd-codebase-mapper | 4 parallel (tech, arch, quality, concerns) |
-| **Debuggers** | gsd-debugger | Sequential (interactive) |
-| **Auditors** | gsd-ui-auditor, gsd-security-auditor | Sequential |
-| **Doc Writers** | gsd-doc-writer, gsd-doc-verifier | Sequential (writer then verifier) |
-| **Profilers** | gsd-user-profiler | Sequential |
-| **Analyzers** | gsd-assumptions-analyzer | Sequential (during discuss-phase) |
+| **Researchers** | wsf-project-researcher, wsf-phase-researcher, wsf-ui-researcher, wsf-advisor-researcher | 4 parallel (stack, features, architecture, pitfalls); advisor spawns during discuss-phase |
+| **Synthesizers** | wsf-research-synthesizer | Sequential (after researchers complete) |
+| **Planners** | wsf-planner, wsf-roadmapper | Sequential |
+| **Checkers** | wsf-plan-checker, wsf-integration-checker, wsf-ui-checker, wsf-nyquist-auditor | Sequential (verification loop, max 3 iterations) |
+| **Executors** | wsf-executor | Parallel within waves, sequential across waves |
+| **Verifiers** | wsf-verifier | Sequential (after all executors complete) |
+| **Mappers** | wsf-codebase-mapper | 4 parallel (tech, arch, quality, concerns) |
+| **Debuggers** | wsf-debugger | Sequential (interactive) |
+| **Auditors** | wsf-ui-auditor, wsf-security-auditor | Sequential |
+| **Doc Writers** | wsf-doc-writer, wsf-doc-verifier | Sequential (writer then verifier) |
+| **Profilers** | wsf-user-profiler | Sequential |
+| **Analyzers** | wsf-assumptions-analyzer | Sequential (during discuss-phase) |
 
 ### Wave Execution Model
 
@@ -311,7 +311,7 @@ When the context window is 500K+ tokens (1M-class models like Opus 4.6, Sonnet 4
 - **Executor agents** receive prior wave SUMMARY.md files and the phase CONTEXT.md/RESEARCH.md, enabling cross-plan awareness within a phase
 - **Verifier agents** receive all PLAN.md, SUMMARY.md, CONTEXT.md files plus REQUIREMENTS.md, enabling history-aware verification
 
-The orchestrator reads `context_window` from config (`gsd-tools.cjs config-get context_window`) and conditionally includes richer context when the value is >= 500,000. For standard 200K windows, prompts use truncated versions with cache-friendly ordering to maximize context efficiency.
+The orchestrator reads `context_window` from config (`wsf-tools.cjs config-get context_window`) and conditionally includes richer context when the value is >= 500,000. For standard 200K windows, prompts use truncated versions with cache-friendly ordering to maximize context efficiency.
 
 #### Parallel Commit Safety
 
@@ -409,18 +409,18 @@ UI-SPEC.md (per phase) ───────────────────
 
 ```
 ~/.claude/                          # Claude Code (global install)
-├── commands/gsd/*.md               # 69 slash commands
-├── get-shit-done/
-│   ├── bin/gsd-tools.cjs           # CLI utility
+├── commands/wsf/*.md               # 69 slash commands
+├── wsf/
+│   ├── bin/wsf-tools.cjs           # CLI utility
 │   ├── bin/lib/*.cjs               # 19 domain modules
 │   ├── workflows/*.md              # 68 workflow definitions
 │   ├── references/*.md             # 35 shared reference docs
 │   └── templates/                  # Planning artifact templates
 ├── agents/*.md                     # 24 agent definitions
 ├── hooks/
-│   ├── gsd-statusline.js           # Statusline hook
-│   ├── gsd-context-monitor.js      # Context warning hook
-│   └── gsd-check-update.js         # Update check hook
+│   ├── wsf-statusline.js           # Statusline hook
+│   ├── wsf-context-monitor.js      # Context warning hook
+│   └── wsf-check-update.js         # Update check hook
 ├── settings.json                   # Hook registrations
 └── VERSION                         # Installed version number
 ```
@@ -443,13 +443,13 @@ Equivalent paths for other runtimes:
 ├── STATE.md                # Living memory: position, decisions, blockers, metrics
 ├── config.json             # Workflow configuration
 ├── MILESTONES.md           # Completed milestone archive
-├── research/               # Domain research from /gsd-new-project
+├── research/               # Domain research from /wsf-new-project
 │   ├── SUMMARY.md
 │   ├── STACK.md
 │   ├── FEATURES.md
 │   ├── ARCHITECTURE.md
 │   └── PITFALLS.md
-├── codebase/               # Brownfield mapping (from /gsd-map-codebase)
+├── codebase/               # Brownfield mapping (from /wsf-map-codebase)
 │   ├── STACK.md
 │   ├── ARCHITECTURE.md
 │   ├── CONVENTIONS.md
@@ -475,13 +475,13 @@ Equivalent paths for other runtimes:
 ├── todos/
 │   ├── pending/            # Captured ideas
 │   └── done/               # Completed todos
-├── threads/               # Persistent context threads (from /gsd-thread)
-├── seeds/                 # Forward-looking ideas (from /gsd-plant-seed)
+├── threads/               # Persistent context threads (from /wsf-thread)
+├── seeds/                 # Forward-looking ideas (from /wsf-plant-seed)
 ├── debug/                  # Active debug sessions
 │   ├── *.md                # Active sessions
 │   ├── resolved/           # Archived sessions
 │   └── knowledge-base.md   # Persistent debug learnings
-├── ui-reviews/             # Screenshots from /gsd-ui-review (gitignored)
+├── ui-reviews/             # Screenshots from /wsf-ui-review (gitignored)
 └── continue-here.md        # Context handoff (from pause-work)
 ```
 
@@ -507,9 +507,9 @@ The installer (`bin/install.js`, ~3,000 lines) handles:
    - Augment Code: Skills-first with full skill conversion and config management
 5. **Path normalization** — Replaces `~/.claude/` paths with runtime-specific paths
 6. **Settings integration** — Registers hooks in runtime's `settings.json`
-7. **Patch backup** — Since v1.17, backs up locally modified files to `gsd-local-patches/` for `/gsd-reapply-patches`
-8. **Manifest tracking** — Writes `gsd-file-manifest.json` for clean uninstall
-9. **Uninstall mode** — `--uninstall` removes all GSD files, hooks, and settings
+7. **Patch backup** — Since v1.17, backs up locally modified files to `wsf-local-patches/` for `/wsf-reapply-patches`
+8. **Manifest tracking** — Writes `wsf-file-manifest.json` for clean uninstall
+9. **Uninstall mode** — `--uninstall` removes all WSF files, hooks, and settings
 
 ### Platform Handling
 
@@ -526,17 +526,17 @@ The installer (`bin/install.js`, ~3,000 lines) handles:
 ```
 Runtime Engine (Claude Code / Gemini CLI)
     │
-    ├── statusLine event ──► gsd-statusline.js
+    ├── statusLine event ──► wsf-statusline.js
     │   Reads: stdin (session JSON)
     │   Writes: stdout (formatted status), /tmp/claude-ctx-{session}.json (bridge)
     │
-    ├── PostToolUse/AfterTool event ──► gsd-context-monitor.js
+    ├── PostToolUse/AfterTool event ──► wsf-context-monitor.js
     │   Reads: stdin (tool event JSON), /tmp/claude-ctx-{session}.json (bridge)
     │   Writes: stdout (hookSpecificOutput with additionalContext warning)
     │
-    └── SessionStart event ──► gsd-check-update.js
+    └── SessionStart event ──► wsf-check-update.js
         Reads: VERSION file
-        Writes: ~/.claude/cache/gsd-update-check.json (spawns background process)
+        Writes: ~/.claude/cache/wsf-update-check.json (spawns background process)
 ```
 
 ### Context Monitor Thresholds
@@ -559,32 +559,32 @@ Debounce: 5 tool uses between repeated warnings. Severity escalation (WARNING→
 
 ### Security Hooks (v1.27)
 
-**Prompt Guard** (`gsd-prompt-guard.js`):
+**Prompt Guard** (`wsf-prompt-guard.js`):
 - Triggers on Write/Edit to `.planning/` files
 - Scans content for prompt injection patterns (role override, instruction bypass, system tag injection)
 - Advisory-only — logs detection, does not block
 - Patterns are inlined (subset of `security.cjs`) for hook independence
 
-**Workflow Guard** (`gsd-workflow-guard.js`):
+**Workflow Guard** (`wsf-workflow-guard.js`):
 - Triggers on Write/Edit to non-`.planning/` files
-- Detects edits outside GSD workflow context (no active `/gsd-` command or Task subagent)
-- Advises using `/gsd-quick` or `/gsd-fast` for state-tracked changes
+- Detects edits outside WSF workflow context (no active `/wsf-` command or Task subagent)
+- Advises using `/wsf-quick` or `/wsf-fast` for state-tracked changes
 - Opt-in via `hooks.workflow_guard: true` (default: false)
 
 ---
 
 ## Runtime Abstraction
 
-GSD supports multiple AI coding runtimes through a unified command/workflow architecture:
+WSF supports multiple AI coding runtimes through a unified command/workflow architecture:
 
 | Runtime | Command Format | Agent System | Config Location |
 |---------|---------------|--------------|-----------------|
-| Claude Code | `/gsd-command` | Task spawning | `~/.claude/` |
-| OpenCode | `/gsd-command` | Subagent mode | `~/.config/opencode/` |
-| Kilo | `/gsd-command` | Subagent mode | `~/.config/kilo/` |
-| Gemini CLI | `/gsd-command` | Task spawning | `~/.gemini/` |
-| Codex | `$gsd-command` | Skills | `~/.codex/` |
-| Copilot | `/gsd-command` | Agent delegation | `~/.github/` |
+| Claude Code | `/wsf-command` | Task spawning | `~/.claude/` |
+| OpenCode | `/wsf-command` | Subagent mode | `~/.config/opencode/` |
+| Kilo | `/wsf-command` | Subagent mode | `~/.config/kilo/` |
+| Gemini CLI | `/wsf-command` | Task spawning | `~/.gemini/` |
+| Codex | `$wsf-command` | Skills | `~/.codex/` |
+| Copilot | `/wsf-command` | Agent delegation | `~/.github/` |
 | Antigravity | Skills | Skills | `~/.gemini/antigravity/` |
 | Trae | Skills | Skills | `~/.trae/` |
 | Cline | Rules | Rules | `.clinerules` |
@@ -596,6 +596,6 @@ GSD supports multiple AI coding runtimes through a unified command/workflow arch
 2. **Hook event names** — Claude uses `PostToolUse`, Gemini uses `AfterTool`
 3. **Agent frontmatter** — Each runtime has its own agent definition format
 4. **Path conventions** — Each runtime stores config in different directories
-5. **Model references** — `inherit` profile lets GSD defer to runtime's model selection
+5. **Model references** — `inherit` profile lets WSF defer to runtime's model selection
 
 The installer handles all translation at install time. Workflows and agents are written in Claude Code's native format and transformed during deployment.

@@ -1,11 +1,11 @@
 # Manual Update (Non-npm Install)
 
-Use this procedure when `npx get-shit-done-cc@latest` is unavailable — e.g. during a publish outage or if you are working directly from the source repo.
+Use this procedure when `npx wsf-cc@latest` is unavailable — e.g. during a publish outage or if you are working directly from the source repo.
 
 ## Prerequisites
 
 - Node.js installed
-- This repo cloned locally (`git clone https://github.com/gsd-build/get-shit-done`)
+- This repo cloned locally (`git clone https://github.com/wsf-build/wsf`)
 
 ## Steps
 
@@ -20,7 +20,7 @@ node scripts/build-hooks.js
 node bin/install.js --claude --global
 
 # 4. Clear the update cache so the statusline indicator resets
-rm -f ~/.cache/gsd/gsd-update-check.json
+rm -f ~/.cache/wsf/wsf-update-check.json
 ```
 
 **Step 5 — Restart your runtime** to pick up the new commands and agents.
@@ -46,17 +46,17 @@ Use `--local` instead of `--global` for a project-scoped install.
 
 ## What the installer replaces
 
-The installer performs a clean wipe-and-replace of GSD-managed directories only:
+The installer performs a clean wipe-and-replace of WSF-managed directories only:
 
-- `~/.claude/get-shit-done/` — workflows, references, templates
-- `~/.claude/commands/gsd/` — slash commands
-- `~/.claude/agents/gsd-*.md` — GSD agents
+- `~/.claude/wsf/` — workflows, references, templates
+- `~/.claude/commands/wsf/` — slash commands
+- `~/.claude/agents/wsf-*.md` — WSF agents
 - `~/.claude/hooks/dist/` — compiled hooks
 
 **What is preserved:**
-- Custom agents not prefixed with `gsd-`
-- Custom commands outside `commands/gsd/`
+- Custom agents not prefixed with `wsf-`
+- Custom commands outside `commands/wsf/`
 - Your `CLAUDE.md` files
 - Custom hooks
 
-Locally modified GSD files are automatically backed up to `gsd-local-patches/` before the install. Run `/gsd-reapply-patches` after updating to merge your modifications back in.
+Locally modified WSF files are automatically backed up to `wsf-local-patches/` before the install. Run `/wsf-reapply-patches` after updating to merge your modifications back in.

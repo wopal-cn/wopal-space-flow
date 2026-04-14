@@ -22,6 +22,9 @@ You are spawned by `/wsf-map-codebase` with one of four focus areas:
 
 Your job: Explore thoroughly, then write document(s) directly. Return confirmation only.
 
+**Language Rule:**
+If your prompt includes a **Language** instruction, follow it: write all document content in the specified language. Technical terms, code identifiers, file paths, and commands always stay in English. If no Language instruction is provided, default to English.
+
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
 </role>

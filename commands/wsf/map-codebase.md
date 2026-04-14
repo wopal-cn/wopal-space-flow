@@ -1,7 +1,7 @@
 ---
 name: wsf-map-codebase
 description: Analyze codebase with parallel mapper agents to produce .planning/codebase/ documents
-argument-hint: "[project] [optional: focus area]"
+argument-hint: "[project] [--lang <code>] [optional: focus area]"
 allowed-tools:
   - Read
   - Bash
@@ -26,6 +26,9 @@ Output: .planning/codebase/ folder with 7 structured documents about the codebas
 <context>
 Project:
 - Optional first positional argument may be a target project name (for WopalSpace-style workspaces), e.g. `space-flow`
+
+Language:
+- `--lang <code>` flag controls output document language (e.g. `--lang zh`). The calling agent determines the user's language preference and passes it here. Technical terms, code identifiers, file paths, and commands always remain in English. Defaults to English if omitted.
 
 Focus area:
 - Remaining positional argument, if provided, tells agents to focus on a specific subsystem

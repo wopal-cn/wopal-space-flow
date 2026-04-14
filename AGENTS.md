@@ -314,6 +314,19 @@ color: yellow
 
 ## 6. 代码约束
 
+**语言偏好**：
+- 所有生成文档的命令/工作流/Agent 必须支持 `--lang <code>` 参数
+- 语言偏好由主 agent 从用户上下文感知（如 `USER.md` 的沟通语言），通过参数传入 WSF 引擎
+- 工作流从 `$ARGUMENTS` 解析 `--lang`，注入到子 agent prompt
+- Agent 收到 Language 指令后以该语言输出文档内容；技术术语、代码标识符、文件路径、命令保持英文
+- 无 `--lang` 参数时默认英文
+- 已实现：`map-codebase`（workflow + agent）；后续新增命令必须遵循此规范
+
+**多项目空间支持**：
+- 工作流从 `init` 输出提取 `project_root`，必须注入到所有子 agent prompt 中
+- 子 agent 的所有探索和文件操作必须限定在 `project_root` 目录内
+- 文档输出路径必须使用绝对路径（`{PROJECT_DIR}/.planning/codebase/`），避免 CWD 不匹配
+
 **代码风格**：
 - 纯 Node.js CommonJS（`.cjs`），无 TypeScript、无 bundler（hooks 除外）
 - 单文件测试，无测试框架依赖

@@ -36,7 +36,13 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_MAPPER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-codebase-mapper 2>/dev/null)
 ```
 
-Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`.
+Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`, `project_root`.
+
+Parse language preference from `$ARGUMENTS`:
+- If `$ARGUMENTS` contains `--lang <code>` (e.g., `--lang zh`), set `LANG_INSTRUCTION` to: `\n\n**Language:** Write all document content in <code>. Technical terms, code identifiers, file paths, and commands remain in English.\n`
+- Otherwise, set `LANG_INSTRUCTION=""` (default English).
+
+Set `PROJECT_DIR="{project_root}"` — this is the absolute path to the target project directory. All mapper agents must scope their exploration to this directory.
 </step>
 
 <step name="check_existing">
@@ -115,16 +121,18 @@ Task(
   description="Map codebase tech stack",
   prompt="Focus: tech
 
+**Project directory:** {PROJECT_DIR}
+All exploration and file operations must be scoped to this directory. Use this as the base path for all Bash, Glob, Grep, and Read operations.
+
 Analyze this codebase for technology stack and external integrations.
 
-Write these documents to .planning/codebase/:
+Write these documents to {PROJECT_DIR}/.planning/codebase/:
 - STACK.md - Languages, runtime, frameworks, dependencies, configuration
 - INTEGRATIONS.md - External APIs, databases, auth providers, webhooks
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
+${AGENT_SKILLS_MAPPER}${LANG_INSTRUCTION}"
 )
-```
 
 **Agent 2: Architecture Focus**
 
@@ -136,16 +144,18 @@ Task(
   description="Map codebase architecture",
   prompt="Focus: arch
 
+**Project directory:** {PROJECT_DIR}
+All exploration and file operations must be scoped to this directory. Use this as the base path for all Bash, Glob, Grep, and Read operations.
+
 Analyze this codebase architecture and directory structure.
 
-Write these documents to .planning/codebase/:
+Write these documents to {PROJECT_DIR}/.planning/codebase/:
 - ARCHITECTURE.md - Pattern, layers, data flow, abstractions, entry points
 - STRUCTURE.md - Directory layout, key locations, naming conventions
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
+${AGENT_SKILLS_MAPPER}${LANG_INSTRUCTION}"
 )
-```
 
 **Agent 3: Quality Focus**
 
@@ -157,16 +167,18 @@ Task(
   description="Map codebase conventions",
   prompt="Focus: quality
 
+**Project directory:** {PROJECT_DIR}
+All exploration and file operations must be scoped to this directory. Use this as the base path for all Bash, Glob, Grep, and Read operations.
+
 Analyze this codebase for coding conventions and testing patterns.
 
-Write these documents to .planning/codebase/:
+Write these documents to {PROJECT_DIR}/.planning/codebase/:
 - CONVENTIONS.md - Code style, naming, patterns, error handling
 - TESTING.md - Framework, structure, mocking, coverage
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
+${AGENT_SKILLS_MAPPER}${LANG_INSTRUCTION}"
 )
-```
 
 **Agent 4: Concerns Focus**
 
@@ -178,13 +190,16 @@ Task(
   description="Map codebase concerns",
   prompt="Focus: concerns
 
+**Project directory:** {PROJECT_DIR}
+All exploration and file operations must be scoped to this directory. Use this as the base path for all Bash, Glob, Grep, and Read operations.
+
 Analyze this codebase for technical debt, known issues, and areas of concern.
 
-Write this document to .planning/codebase/:
+Write this document to {PROJECT_DIR}/.planning/codebase/:
 - CONCERNS.md - Tech debt, bugs, security, performance, fragile areas
 
 Explore thoroughly. Write document directly using template. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
+${AGENT_SKILLS_MAPPER}${LANG_INSTRUCTION}"
 )
 ```
 
@@ -231,6 +246,8 @@ Continue to verify_output.
 When the `Task` tool is unavailable, perform codebase mapping sequentially in the current context. This replaces `spawn_agents` and `collect_confirmations`.
 
 **IMPORTANT:** Do NOT use `browser_subagent`, `Explore`, or any browser-based tool. Use only file system tools (Read, Bash, Write, Grep, Glob, list_dir, view_file, grep_search, or equivalent tools available in your runtime).
+
+**All exploration and file operations must be scoped to `{PROJECT_DIR}`.** Use this as the base path for all tool calls.
 
 Perform all 4 mapping passes sequentially:
 

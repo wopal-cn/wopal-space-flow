@@ -131,7 +131,7 @@ describe('convertClaudeToAntigravityContent', () => {
     });
 
     test('replaces ./.claude/ with ./.agent/', () => {
-      const input = 'path ./.claude/hooks/wsf-check-update.js';
+      const input = 'path ./.claude/hooks/wsf-statusline.js';
       const result = convertClaudeToAntigravityContent(input, false);
       assert.ok(result.includes('./.agent/hooks/'), result);
       assert.ok(!result.includes('./.claude/'), result);

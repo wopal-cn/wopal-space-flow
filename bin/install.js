@@ -5514,39 +5514,6 @@ function install(isGlobal, runtime = 'claude') {
     console.log(`  ${green}✓${reset} Generated config.toml with ${agentCount} agent roles`);
     console.log(`  ${green}✓${reset} Generated ${agentCount} agent .toml config files`);
 
-    // Add Codex hooks (SessionStart for update checking) — requires codex_hooks feature flag
-    const configPath = path.join(targetDir, 'config.toml');
-    try {
-      let configContent = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf-8') : '';
-      const eol = detectLineEnding(configContent);
-      const codexHooksFeature = ensureCodexHooksFeature(configContent);
-      configContent = setManagedCodexHooksOwnership(codexHooksFeature.content, codexHooksFeature.ownership);
-
-      // Add SessionStart hook for update checking
-      const updateCheckScript = path.resolve(targetDir, 'hooks', 'wsf-check-update.js').replace(/\\/g, '/');
-      const hookBlock =
-        `${eol}# WSF Hooks${eol}` +
-        `[[hooks]]${eol}` +
-        `event = "SessionStart"${eol}` +
-        `command = "node ${updateCheckScript}"${eol}`;
-
-      // Migrate legacy wsf-update-check entries from prior installs (#1755 followup)
-      // Remove stale hook blocks that used the inverted filename or wrong path
-      if (configContent.includes('wsf-update-check')) {
-        configContent = configContent.replace(/\n# WSF Hooks\n\[\[hooks\]\]\nevent = "SessionStart"\ncommand = "node [^\n]*wsf-update-check\.js"\n/g, '\n');
-        configContent = configContent.replace(/\r\n# WSF Hooks\r\n\[\[hooks\]\]\r\nevent = "SessionStart"\r\ncommand = "node [^\r\n]*wsf-update-check\.js"\r\n/g, '\r\n');
-      }
-
-      if (hasEnabledCodexHooksFeature(configContent) && !configContent.includes('wsf-check-update')) {
-        configContent += hookBlock;
-      }
-
-      fs.writeFileSync(configPath, configContent, 'utf-8');
-      console.log(`  ${green}✓${reset} Configured Codex hooks (SessionStart)`);
-    } catch (e) {
-      console.warn(`  ${yellow}⚠${reset}  Could not configure Codex hooks: ${e.message}`);
-    }
-
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 

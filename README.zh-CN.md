@@ -570,7 +570,6 @@ lmn012o feat(08-02): create registration endpoint
 | `/wsf-progress` | 我现在在哪？下一步是什么？ |
 | `/wsf-next` | 自动检测状态并执行下一步 |
 | `/wsf-help` | 显示全部命令和使用指南 |
-| `/wsf-update` | 更新 WSF，并预览变更日志 |
 | `/wsf-join-discord` | 加入 WSF Discord 社区 |
 
 ### Brownfield

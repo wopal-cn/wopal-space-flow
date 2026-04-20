@@ -198,7 +198,6 @@
 | `/wsf-resume-work` | 从上次会话恢复完整上下文 | 开始新会话 |
 | `/wsf-pause-work` | 保存上下文交接 | 阶段中途停止 |
 | `/wsf-help` | 显示所有命令 | 快速参考 |
-| `/wsf-update` | 更新 WSF 并预览变更日志 | 检查新版本 |
 | `/wsf-join-discord` | 打开 Discord 社区邀请 | 问题或社区 |
 
 ### 阶段管理
@@ -234,7 +233,7 @@
 | `/wsf-check-todos` | 列出待处理事项 | 查看捕获的想法 |
 | `/wsf-settings` | 配置工作流开关和模型配置 | 更改模型、切换代理 |
 | `/wsf-set-profile <profile>` | 快速切换配置 | 更改成本/质量权衡 |
-| `/wsf-reapply-patches` | 更新后恢复本地修改 | 如果你有本地编辑，在 `/wsf-update` 后 |
+| `/wsf-reapply-patches` | 重新安装后恢复本地修改 | 重新安装后如有本地编辑 |
 
 ---
 

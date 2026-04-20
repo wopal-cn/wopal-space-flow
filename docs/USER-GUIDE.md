@@ -498,7 +498,6 @@ For a focused assessment without full `/wsf-map-codebase` overhead:
 | `/wsf-pause-work` | Save structured handoff (HANDOFF.json + continue-here.md) | Stopping mid-phase |
 | `/wsf-session-report` | Generate session summary with work and outcomes | End of session, stakeholder sharing |
 | `/wsf-help` | Show all commands | Quick reference |
-| `/wsf-update` | Update WSF with changelog preview | Check for new versions |
 | `/wsf-join-discord` | Open Discord community invite | Questions or community |
 
 ### Phase Management
@@ -531,7 +530,7 @@ For a focused assessment without full `/wsf-map-codebase` overhead:
 | `/wsf-check-todos` | List pending todos | Review captured ideas |
 | `/wsf-settings` | Configure workflow toggles and model profile | Change model, toggle agents |
 | `/wsf-set-profile <profile>` | Quick profile switch | Change cost/quality tradeoff |
-| `/wsf-reapply-patches` | Restore local modifications after update | After `/wsf-update` if you had local edits |
+| `/wsf-reapply-patches` | Restore local modifications after reinstall | After reinstall if you had local edits |
 
 ### Code Quality & Review
 

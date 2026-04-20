@@ -498,7 +498,6 @@ lmn012o feat(08-02): 创建注册端点
 |---------|--------------|
 | `/wsf-progress` | 我在哪？接下来做什么？ |
 | `/wsf-help` | 显示所有命令和使用指南 |
-| `/wsf-update` | 更新 WSF 并预览变更日志 |
 | `/wsf-join-discord` | 加入 WSF Discord 社区 |
 
 ### 现有代码库

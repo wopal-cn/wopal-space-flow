@@ -447,17 +447,6 @@ Usage: `/wsf-cleanup`
 **`/wsf-help`**
 Show this command reference.
 
-**`/wsf-update`**
-Update WSF to latest version with changelog preview.
-
-- Shows installed vs latest version comparison
-- Displays changelog entries for versions you've missed
-- Highlights breaking changes
-- Confirms before running install
-- Better than raw `npx wsf-cc`
-
-Usage: `/wsf-update`
-
 **`/wsf-join-discord`**
 Join the WSF Discord community.
 

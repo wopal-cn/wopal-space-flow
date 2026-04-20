@@ -115,7 +115,7 @@ Read `backup-meta.json` from the patches directory.
 ```
 No local patches found. Nothing to reapply.
 
-Local patches are automatically saved when you run /wsf-update
+Local patches are automatically saved during WSF reinstallation
 after modifying any WSF workflow, command, or agent files.
 ```
 Exit.
@@ -212,7 +212,7 @@ d. **If ALL differences appear to be mechanical drift → still flag as CONFLICT
 When the config directory is a git repo but the pristine install commit can't be found, use commit history to identify user changes:
 ```bash
 # Find non-update commits that touched this file
-git -C "$CONFIG_DIR" log --oneline --no-merges -- "{file_path}" | grep -v "wsf-update\|WSF update\|wsf-install"
+git -C "$CONFIG_DIR" log --oneline --no-merges -- "{file_path}" | grep -v "WSF update\|wsf-install"
 ```
 Each matching commit represents an intentional user modification. Use the commit messages and diffs to understand what was changed and why.
 

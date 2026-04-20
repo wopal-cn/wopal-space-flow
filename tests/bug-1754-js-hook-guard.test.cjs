@@ -22,7 +22,6 @@ const path = require('path');
 const INSTALL_SRC = path.join(__dirname, '..', 'bin', 'install.js');
 
 const JS_HOOKS = [
-  { name: 'wsf-check-update.js',      registrationAnchor: 'hasGsdUpdateHook' },
   { name: 'wsf-context-monitor.js',   registrationAnchor: 'hasContextMonitorHook' },
   { name: 'wsf-prompt-guard.js',      registrationAnchor: 'hasPromptGuardHook' },
   { name: 'wsf-read-guard.js',        registrationAnchor: 'hasReadGuardHook' },

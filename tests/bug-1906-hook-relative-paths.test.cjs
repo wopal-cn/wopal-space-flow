@@ -25,7 +25,6 @@ const INSTALL_SRC = path.join(__dirname, '..', 'bin', 'install.js');
 // All hooks that the installer registers for local installs
 const HOOKS = [
   'wsf-statusline.js',
-  'wsf-check-update.js',
   'wsf-context-monitor.js',
   'wsf-prompt-guard.js',
   'wsf-read-guard.js',

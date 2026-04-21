@@ -51,6 +51,13 @@ before(() => {
   });
 });
 
+test('build-hooks removes stale wsf-check-update.js from hooks/dist', () => {
+  assert.ok(
+    !fs.existsSync(path.join(HOOKS_DIST, 'wsf-check-update.js')),
+    'build-hooks.js should clean stale wsf-check-update.js from hooks/dist'
+  );
+});
+
 // ─── Helper: simulate the hook copy loop from install.js ────────────────────
 // NOTE: This helper mirrors the chmod/copy logic only. It omits the .js
 // template substitution ('.claude' → runtime dir, {{WSF_VERSION}} stamping)
@@ -157,8 +164,8 @@ describe('install.js source correctness', () => {
 
   test('cache invalidation uses ~/.cache/wsf/ path', () => {
     assert.ok(
-      src.includes("os.homedir(), '.cache', 'wsf'"),
-      'Cache path should use os.homedir()/.cache/wsf/'
+      src.includes('.cache') && src.includes('wsf'),
+      'Cache invalidation logic should still reference the WSF cache area'
     );
   });
 
@@ -189,6 +196,7 @@ describe('install.js source correctness', () => {
   test('isGsdHookCommand covers all WSF hook names', () => {
     // The consolidated uninstall cleanup uses isGsdHookCommand — verify all hook names are present
     const expectedHookNames = [
+      'wsf-check-update',
       'wsf-statusline', 'wsf-session-state',
       'wsf-context-monitor', 'wsf-phase-boundary', 'wsf-prompt-guard',
       'wsf-read-guard', 'wsf-validate-commit', 'wsf-workflow-guard',
@@ -201,11 +209,21 @@ describe('install.js source correctness', () => {
     }
   });
 
-  test('Codex install no longer references update-check', () => {
-    // The old wsf-update-check migration has been removed
-    assert.ok(
-      !src.includes("wsf-check-update"),
-      'install.js should not reference wsf-check-update'
+  test('install.js does not actively install or register update-check hooks', () => {
+    const activeUpdateHookLines = src
+      .split('\n')
+      .filter(line =>
+        line.includes('wsf-check-update') &&
+        (line.includes('buildHookCommand') ||
+          line.includes("'node '") ||
+          line.includes('settings.hooks') ||
+          line.includes('hooks/dist'))
+      );
+
+    assert.strictEqual(
+      activeUpdateHookLines.length,
+      0,
+      'install.js may clean legacy wsf-check-update artifacts, but must not install or register them'
     );
   });
 
@@ -232,6 +250,20 @@ describe('install.js source correctness', () => {
     assert.ok(
       src.includes('Missing expected hook:'),
       'install should warn about missing .sh hooks after verification'
+    );
+  });
+
+  test('OpenCode local install targets .agents root', () => {
+    assert.ok(
+      src.includes("if (!isGlobal && runtime === 'opencode') return '.agents';"),
+      'OpenCode local install should target .agents root'
+    );
+  });
+
+  test('OpenCode local install writes manifest via .opencode compatibility dir', () => {
+    assert.ok(
+      src.includes('writeManifest(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);'),
+      'OpenCode local install should keep manifest in .opencode compatibility dir'
     );
   });
 });

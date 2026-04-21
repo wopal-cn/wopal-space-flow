@@ -2,6 +2,18 @@
 Display the complete WSF command reference. Output ONLY the reference content. Do NOT add project-specific analysis, git status, next-step suggestions, or any commentary beyond the reference.
 </purpose>
 
+<language>
+Language preference is determined by:
+1. If `$ARGUMENTS` contains `--lang <code>` → use specified language
+2. If not provided → infer from context (check USER.md "沟通语言" field, user's conversation language in current session)
+3. Default → English if no preference detected
+
+Regardless of language, these MUST remain in English:
+- Command names (e.g., `/wsf-new-project`, `/wsf-plan-phase`)
+- File paths (e.g., `.planning/STATE.md`, `.planning/codebase/`)
+- Code identifiers, CLI flags, and technical terms
+</language>
+
 <reference>
 # WSF Command Reference
 

@@ -27,8 +27,12 @@ Output: .planning/codebase/ folder with 7 structured documents about the codebas
 Project:
 - Optional first positional argument may be a target project name (for WopalSpace-style workspaces), e.g. `space-flow`
 
-Language:
-- `--lang <code>` flag controls output document language (e.g. `--lang zh`). The calling agent determines the user's language preference and passes it here. Technical terms, code identifiers, file paths, and commands always remain in English. Defaults to English if omitted.
+Language preference is determined by:
+1. If `--lang <code>` is provided → use specified language (e.g., `--lang zh`)
+2. If not provided → infer from context (check USER.md "沟通语言" field, user's conversation language in current session)
+3. Default → English if no preference detected
+
+Technical terms, code identifiers, file paths, and commands always remain in English regardless of output language.
 
 Focus area:
 - Remaining positional argument, if provided, tells agents to focus on a specific subsystem

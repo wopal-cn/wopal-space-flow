@@ -130,4 +130,26 @@ describe('uninstall — manifest cleanup (#1908)', () => {
       ].join(' ')
     );
   });
+
+  test('OpenCode local uninstall removes manifest from .opencode and skills from .agents', () => {
+    const compatDir = path.join(tmpDir, '.opencode');
+    const installDir = path.join(tmpDir, '.agents');
+    const manifestPath = path.join(compatDir, MANIFEST_NAME);
+
+    fs.mkdirSync(path.join(installDir, 'skills', 'wsf-test'), { recursive: true });
+    fs.writeFileSync(path.join(installDir, 'skills', 'wsf-test', 'SKILL.md'), '# skill');
+    fs.mkdirSync(compatDir, { recursive: true });
+    fs.writeFileSync(manifestPath, JSON.stringify({ version: '1.34.0', files: {} }, null, 2));
+
+    const savedCwd = process.cwd();
+    process.chdir(tmpDir);
+    try {
+      uninstall(false, 'opencode');
+    } finally {
+      process.chdir(savedCwd);
+    }
+
+    assert.ok(!fs.existsSync(manifestPath), 'OpenCode local uninstall should remove manifest from .opencode');
+    assert.ok(!fs.existsSync(path.join(installDir, 'skills', 'wsf-test')), 'OpenCode local uninstall should remove WSF skills from .agents');
+  });
 });

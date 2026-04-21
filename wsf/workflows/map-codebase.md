@@ -38,9 +38,15 @@ AGENT_SKILLS_MAPPER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills ws
 
 Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`, `project_root`.
 
-Parse language preference from `$ARGUMENTS`:
-- If `$ARGUMENTS` contains `--lang <code>` (e.g., `--lang zh`), set `LANG_INSTRUCTION` to: `\n\n**Language:** Write all document content in <code>. Technical terms, code identifiers, file paths, and commands remain in English.\n`
-- Otherwise, set `LANG_INSTRUCTION=""` (default English).
+Parse language preference:
+1. If `$ARGUMENTS` contains `--lang <code>` → use specified language
+2. If not provided → infer from context (check USER.md "沟通语言" field, user's conversation language in current session)
+3. Default → English if no preference detected
+
+If language preference detected (from either source), set `LANG_INSTRUCTION` to:
+`\n\n**Language:** Write all document content in <detected-language>. Technical terms, code identifiers, file paths, and commands remain in English.\n`
+
+Otherwise, set `LANG_INSTRUCTION=""` (default English).
 
 Set `PROJECT_DIR="{project_root}"` — this is the absolute path to the target project directory. All mapper agents must scope their exploration to this directory.
 </step>

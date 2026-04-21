@@ -1,25 +1,14 @@
 <div align="center">
 
-# GET SHIT DONE
+# WOPAL SPACE FLOW
 
 **一个轻量级且强大的元提示、上下文工程和规格驱动开发系统，支持 Claude Code、OpenCode、Gemini CLI、Kilo、Codex、Copilot、Cursor、Windsurf、Antigravity、Augment、Trae 和 Cline。**
 
 **解决上下文衰减 —— 即 Claude 填充上下文窗口时发生的质量退化问题。**
 
-[![npm version](https://img.shields.io/npm/v/wsf-cc?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/wsf-cc)
-[![npm downloads](https://img.shields.io/npm/dm/wsf-cc?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/wsf-cc)
-[![Tests](https://img.shields.io/github/actions/workflow/status/wsf-build/wsf/test.yml?branch=main&style=for-the-badge&logo=github&label=Tests)](https://github.com/wsf-build/wsf/actions/workflows/test.yml)
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mYgfVNfA2r)
-[![X (Twitter)](https://img.shields.io/badge/X-@wsf__foundation-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/wsf_foundation)
-[![$WSF Token](https://img.shields.io/badge/$WSF-Dexscreener-1C1C1C?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0iIzAwRkYwMCIvPjwvc3ZnPg==&logoColor=00FF00)](https://dexscreener.com/solana/dwudwjvan7bzkw9zwlbyv6kspdlvhwzrqy6ebk8xzxkv)
-[![GitHub stars](https://img.shields.io/github/stars/wsf-build/wsf?style=for-the-badge&logo=github&color=181717)](https://github.com/wsf-build/wsf)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 
 <br>
-
-```bash
-npx wsf-cc@latest
-```
 
 **支持 Mac、Windows 和 Linux。**
 
@@ -93,14 +82,6 @@ npx wsf-cc@latest
 
 > [!NOTE]
 > Codex 安装使用技能（`skills/wsf-*/SKILL.md`）而非自定义提示。
-
-### 保持更新
-
-WSF 快速迭代。定期更新：
-
-```bash
-npx wsf-cc@latest
-```
 
 <details>
 <summary><strong>非交互式安装（Docker、CI、脚本）</strong></summary>

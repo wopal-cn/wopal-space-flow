@@ -143,6 +143,59 @@ function getDirName(runtime) {
   return '.claude';
 }
 
+function getInstallRootDirName(runtime, isGlobal = false) {
+  if (!isGlobal && runtime === 'opencode') return '.agents';
+  return getDirName(runtime);
+}
+
+function getOpencodeLocalInstallRoots(cwd = process.cwd()) {
+  return {
+    installRoot: path.join(cwd, '.agents'),
+    compatRoot: path.join(cwd, '.opencode'),
+  };
+}
+
+function getManifestBaseDir(configDir, runtime = 'claude') {
+  if (runtime === 'opencode' && path.basename(configDir) === '.opencode') {
+    return path.join(path.dirname(configDir), '.agents');
+  }
+  return configDir;
+}
+
+function getRuntimePatchRoots(configDir, runtime = 'claude') {
+  const roots = [configDir];
+  if (runtime === 'opencode' && path.basename(configDir) === '.opencode') {
+    roots.unshift(path.join(path.dirname(configDir), '.agents'));
+  }
+  return [...new Set(roots)];
+}
+
+function removeWsfSkillDirs(skillsDir, prefix = 'wsf-') {
+  if (!fs.existsSync(skillsDir)) return 0;
+  let skillCount = 0;
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory() && entry.name.startsWith(prefix)) {
+      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
+      skillCount++;
+    }
+  }
+  return skillCount;
+}
+
+function cleanupLegacyOpencodeLocalArtifacts(cwd = process.cwd()) {
+  const { compatRoot } = getOpencodeLocalInstallRoots(cwd);
+  const legacySkillsDir = path.join(compatRoot, 'skills');
+  const removedLegacySkills = removeWsfSkillDirs(legacySkillsDir);
+  if (removedLegacySkills > 0) {
+    console.log(`  ${green}✓${reset} Removed ${removedLegacySkills} legacy OpenCode skills from .opencode/skills/`);
+  }
+  if (fs.existsSync(legacySkillsDir) && fs.readdirSync(legacySkillsDir).length === 0) {
+    fs.rmdirSync(legacySkillsDir);
+  }
+  return { compatRoot, removedLegacySkills };
+}
+
 /**
  * Get the config directory path relative to home directory for a runtime
  * Used for templating hooks that use path.join(homeDir, '<configDir>', ...)
@@ -866,6 +919,31 @@ function convertClaudeCommandToClaudeSkill(content, skillName) {
   return `${fm}\n${body}`;
 }
 
+function convertClaudeCommandToOpencodeSkill(content, skillName) {
+  const converted = convertClaudeToOpencodeFrontmatter(content);
+  const { frontmatter, body } = extractFrontmatterAndBody(converted);
+  if (!frontmatter) return converted;
+
+  const description = extractFrontmatterField(frontmatter, 'description') || '';
+  const argumentHint = extractFrontmatterField(frontmatter, 'argument-hint');
+  const agent = extractFrontmatterField(frontmatter, 'agent');
+
+  const toolsMatch = frontmatter.match(/^tools:\s*\n((?:\s+.+\n?)*)/m);
+  let toolsBlock = '';
+  if (toolsMatch) {
+    toolsBlock = 'tools:\n' + toolsMatch[1];
+    if (!toolsBlock.endsWith('\n')) toolsBlock += '\n';
+  }
+
+  let fm = `---\nname: ${skillName}\ndescription: ${yamlQuote(description)}\n`;
+  if (argumentHint) fm += `argument-hint: ${yamlQuote(argumentHint)}\n`;
+  if (agent) fm += `agent: ${agent}\n`;
+  if (toolsBlock) fm += toolsBlock;
+  fm += '---';
+
+  return `${fm}\n${body}`;
+}
+
 /**
  * Convert a Claude agent (.md) to a Copilot agent (.agent.md).
  * Applies tool mapping + deduplication, formats tools as JSON array.
@@ -1238,6 +1316,58 @@ function convertClaudeAgentToWindsurfAgent(content) {
   return `${cleanFrontmatter}\n${body}`;
 }
 
+function copyCommandsAsWindsurfSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
+  if (!fs.existsSync(srcDir)) {
+    return;
+  }
+
+  fs.mkdirSync(skillsDir, { recursive: true });
+
+  const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of existing) {
+    if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
+      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
+    }
+  }
+
+  function recurse(currentSrcDir, currentPrefix) {
+    const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(currentSrcDir, entry.name);
+      if (entry.isDirectory()) {
+        recurse(srcPath, `${currentPrefix}-${entry.name}`);
+        continue;
+      }
+
+      if (!entry.name.endsWith('.md')) {
+        continue;
+      }
+
+      const baseName = entry.name.replace('.md', '');
+      const skillName = `${currentPrefix}-${baseName}`;
+      const skillDir = path.join(skillsDir, skillName);
+      fs.mkdirSync(skillDir, { recursive: true });
+
+      let content = fs.readFileSync(srcPath, 'utf8');
+      const globalClaudeRegex = /~\/\.claude\//g;
+      const globalClaudeHomeRegex = /\$HOME\/\.claude\//g;
+      const localClaudeRegex = /\.\/\.claude\//g;
+      const windsurfDirRegex = /~\/\.windsurf\//g;
+      content = content.replace(globalClaudeRegex, pathPrefix);
+      content = content.replace(globalClaudeHomeRegex, pathPrefix);
+      content = content.replace(localClaudeRegex, `./${getDirName(runtime)}/`);
+      content = content.replace(windsurfDirRegex, pathPrefix);
+      content = processAttribution(content, getCommitAttribution(runtime));
+      content = convertClaudeCommandToWindsurfSkill(content, skillName);
+
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
+    }
+  }
+
+  recurse(srcDir, prefix);
+}
+
 // --- Augment converters ---
 // Augment uses a tool set similar to Cursor/Windsurf.
 // Config lives in .augment/ (local) and ~/.augment/ (global).
@@ -1474,6 +1604,58 @@ function convertClaudeAgentToTraeAgent(content) {
   const cleanFrontmatter = `---\nname: ${yamlIdentifier(name)}\ndescription: ${yamlQuote(toSingleLine(description))}\n---`;
 
   return `${cleanFrontmatter}\n${body}`;
+}
+
+function copyCommandsAsTraeSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
+  if (!fs.existsSync(srcDir)) {
+    return;
+  }
+
+  fs.mkdirSync(skillsDir, { recursive: true });
+
+  const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of existing) {
+    if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
+      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
+    }
+  }
+
+  function recurse(currentSrcDir, currentPrefix) {
+    const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(currentSrcDir, entry.name);
+      if (entry.isDirectory()) {
+        recurse(srcPath, `${currentPrefix}-${entry.name}`);
+        continue;
+      }
+
+      if (!entry.name.endsWith('.md')) {
+        continue;
+      }
+
+      const baseName = entry.name.replace('.md', '');
+      const skillName = `${currentPrefix}-${baseName}`;
+      const skillDir = path.join(skillsDir, skillName);
+      fs.mkdirSync(skillDir, { recursive: true });
+
+      let content = fs.readFileSync(srcPath, 'utf8');
+      const globalClaudeRegex = /~\/\.claude\//g;
+      const globalClaudeHomeRegex = /\$HOME\/\.claude\//g;
+      const localClaudeRegex = /\.\/\.claude\//g;
+      const traeDirRegex = /~\/\.trae\//g;
+      content = content.replace(globalClaudeRegex, pathPrefix);
+      content = content.replace(globalClaudeHomeRegex, pathPrefix);
+      content = content.replace(localClaudeRegex, `./${getDirName(runtime)}/`);
+      content = content.replace(traeDirRegex, pathPrefix);
+      content = processAttribution(content, getCommitAttribution(runtime));
+      content = convertClaudeCommandToTraeSkill(content, skillName);
+
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
+    }
+  }
+
+  recurse(srcDir, prefix);
 }
 
 function convertSlashCommandsToCodexSkillMentions(content) {
@@ -3531,122 +3713,6 @@ function copyCommandsAsCursorSkills(srcDir, skillsDir, prefix, pathPrefix, runti
 }
 
 /**
- * Copy Claude commands as Windsurf skills — one folder per skill with SKILL.md.
- * Mirrors copyCommandsAsCursorSkills but uses Windsurf converters.
- */
-function copyCommandsAsWindsurfSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
-  if (!fs.existsSync(srcDir)) {
-    return;
-  }
-
-  fs.mkdirSync(skillsDir, { recursive: true });
-
-  // Remove previous WSF Windsurf skills to avoid stale command skills
-  const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
-  for (const entry of existing) {
-    if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
-      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
-    }
-  }
-
-  function recurse(currentSrcDir, currentPrefix) {
-    const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const srcPath = path.join(currentSrcDir, entry.name);
-      if (entry.isDirectory()) {
-        recurse(srcPath, `${currentPrefix}-${entry.name}`);
-        continue;
-      }
-
-      if (!entry.name.endsWith('.md')) {
-        continue;
-      }
-
-      const baseName = entry.name.replace('.md', '');
-      const skillName = `${currentPrefix}-${baseName}`;
-      const skillDir = path.join(skillsDir, skillName);
-      fs.mkdirSync(skillDir, { recursive: true });
-
-      let content = fs.readFileSync(srcPath, 'utf8');
-      const globalClaudeRegex = /~\/\.claude\//g;
-      const globalClaudeHomeRegex = /\$HOME\/\.claude\//g;
-      const localClaudeRegex = /\.\/\.claude\//g;
-      const windsurfDirRegex = /~\/\.codeium\/windsurf\//g;
-      content = content.replace(globalClaudeRegex, pathPrefix);
-      content = content.replace(globalClaudeHomeRegex, pathPrefix);
-      content = content.replace(localClaudeRegex, `./${getDirName(runtime)}/`);
-      content = content.replace(windsurfDirRegex, pathPrefix);
-      content = processAttribution(content, getCommitAttribution(runtime));
-      content = convertClaudeCommandToWindsurfSkill(content, skillName);
-
-      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
-    }
-  }
-
-  recurse(srcDir, prefix);
-}
-
-function copyCommandsAsTraeSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
-  if (!fs.existsSync(srcDir)) {
-    return;
-  }
-
-  fs.mkdirSync(skillsDir, { recursive: true });
-
-  const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
-  for (const entry of existing) {
-    if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
-      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
-    }
-  }
-
-  function recurse(currentSrcDir, currentPrefix) {
-    const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const srcPath = path.join(currentSrcDir, entry.name);
-      if (entry.isDirectory()) {
-        recurse(srcPath, `${currentPrefix}-${entry.name}`);
-        continue;
-      }
-
-      if (!entry.name.endsWith('.md')) {
-        continue;
-      }
-
-      const baseName = entry.name.replace('.md', '');
-      const skillName = `${currentPrefix}-${baseName}`;
-      const skillDir = path.join(skillsDir, skillName);
-      fs.mkdirSync(skillDir, { recursive: true });
-
-      let content = fs.readFileSync(srcPath, 'utf8');
-      const globalClaudeRegex = /~\/\.claude\//g;
-      const globalClaudeHomeRegex = /\$HOME\/\.claude\//g;
-      const localClaudeRegex = /\.\/\.claude\//g;
-      const bareGlobalClaudeRegex = /~\/\.claude\b/g;
-      const bareGlobalClaudeHomeRegex = /\$HOME\/\.claude\b/g;
-      const bareLocalClaudeRegex = /\.\/\.claude\b/g;
-      const traeDirRegex = /~\/\.trae\//g;
-      const normalizedPathPrefix = pathPrefix.replace(/\/$/, '');
-      content = content.replace(globalClaudeRegex, pathPrefix);
-      content = content.replace(globalClaudeHomeRegex, pathPrefix);
-      content = content.replace(localClaudeRegex, `./${getDirName(runtime)}/`);
-      content = content.replace(bareGlobalClaudeRegex, normalizedPathPrefix);
-      content = content.replace(bareGlobalClaudeHomeRegex, normalizedPathPrefix);
-      content = content.replace(bareLocalClaudeRegex, `./${getDirName(runtime)}`);
-      content = content.replace(traeDirRegex, pathPrefix);
-      content = processAttribution(content, getCommitAttribution(runtime));
-      content = convertClaudeCommandToTraeSkill(content, skillName);
-
-      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
-    }
-  }
-
-  recurse(srcDir, prefix);
-}
-
-/**
  * Copy Claude commands as Copilot skills — one folder per skill with SKILL.md.
  * Applies CONV-01 (structure), CONV-02 (allowed-tools), CONV-06 (paths), CONV-07 (command names).
  */
@@ -3687,6 +3753,50 @@ function copyCommandsAsCopilotSkills(srcDir, skillsDir, prefix, isGlobal = false
       let content = fs.readFileSync(srcPath, 'utf8');
       content = convertClaudeCommandToCopilotSkill(content, skillName, isGlobal);
       content = processAttribution(content, getCommitAttribution('copilot'));
+
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
+    }
+  }
+
+  recurse(srcDir, prefix);
+}
+
+function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = false) {
+  if (!fs.existsSync(srcDir)) {
+    return;
+  }
+
+  fs.mkdirSync(skillsDir, { recursive: true });
+
+  const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of existing) {
+    if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
+      fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
+    }
+  }
+
+  function recurse(currentSrcDir, currentPrefix) {
+    const entries = fs.readdirSync(currentSrcDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(currentSrcDir, entry.name);
+      if (entry.isDirectory()) {
+        recurse(srcPath, `${currentPrefix}-${entry.name}`);
+        continue;
+      }
+
+      if (!entry.name.endsWith('.md')) {
+        continue;
+      }
+
+      const baseName = entry.name.replace('.md', '');
+      const skillName = `${currentPrefix}-${baseName}`;
+      const skillDir = path.join(skillsDir, skillName);
+      fs.mkdirSync(skillDir, { recursive: true });
+
+      let content = fs.readFileSync(srcPath, 'utf8');
+      content = processAttribution(content, getCommitAttribution('antigravity'));
+      content = convertClaudeCommandToAntigravitySkill(content, skillName, isGlobal);
 
       fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
     }
@@ -3742,9 +3852,6 @@ function copyCommandsAsClaudeSkills(srcDir, skillsDir, prefix, pathPrefix, runti
       fs.mkdirSync(skillDir, { recursive: true });
 
       let content = fs.readFileSync(srcPath, 'utf8');
-      content = content.replace(/~\/\.claude\//g, pathPrefix);
-      content = content.replace(/\$HOME\/\.claude\//g, pathPrefix);
-      content = content.replace(/\.\/\.claude\//g, `./${getDirName(runtime)}/`);
       content = processAttribution(content, getCommitAttribution('claude'));
       content = convertClaudeCommandToClaudeSkill(content, skillName);
 
@@ -3756,22 +3863,20 @@ function copyCommandsAsClaudeSkills(srcDir, skillsDir, prefix, pathPrefix, runti
 }
 
 /**
- * Recursively install WSF commands as Antigravity skills.
- * Each command becomes a skill-name/ folder containing SKILL.md.
- * Mirrors copyCommandsAsCopilotSkills but uses Antigravity converters.
+ * Copy commands as OpenCode skills (skills/wsf-xxx/SKILL.md format).
  * @param {string} srcDir - Source commands directory
  * @param {string} skillsDir - Target skills directory
  * @param {string} prefix - Skill name prefix (e.g. 'wsf')
- * @param {boolean} isGlobal - Whether this is a global install
+ * @param {string} pathPrefix - Path prefix for file references
+ * @param {string} runtime - Target runtime
  */
-function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = false) {
+function copyCommandsAsOpencodeSkills(srcDir, skillsDir, prefix, pathPrefix, runtime) {
   if (!fs.existsSync(srcDir)) {
     return;
   }
 
   fs.mkdirSync(skillsDir, { recursive: true });
 
-  // Remove previous WSF Antigravity skills
   const existing = fs.readdirSync(skillsDir, { withFileTypes: true });
   for (const entry of existing) {
     if (entry.isDirectory() && entry.name.startsWith(`${prefix}-`)) {
@@ -3799,8 +3904,14 @@ function copyCommandsAsAntigravitySkills(srcDir, skillsDir, prefix, isGlobal = f
       fs.mkdirSync(skillDir, { recursive: true });
 
       let content = fs.readFileSync(srcPath, 'utf8');
-      content = convertClaudeCommandToAntigravitySkill(content, skillName, isGlobal);
-      content = processAttribution(content, getCommitAttribution('antigravity'));
+      content = content.replace(/~\/\.claude\//g, pathPrefix);
+      content = content.replace(/\$HOME\/\.claude\//g, pathPrefix);
+      content = content.replace(/\.\/\.claude\//g, runtime === 'opencode' ? './.agents/' : `./${getDirName(runtime)}/`);
+      if (runtime === 'opencode') {
+        content = content.replace(/\.\/\.opencode\//g, './.agents/');
+      }
+      content = processAttribution(content, getCommitAttribution(runtime));
+      content = convertClaudeCommandToOpencodeSkill(content, skillName);
 
       fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
     }
@@ -3880,8 +3991,6 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
     if (entry.isDirectory()) {
       copyWithPathReplacement(srcPath, destPath, pathPrefix, runtime, isCommand, isGlobal);
     } else if (entry.name.endsWith('.md')) {
-      // Replace ~/.claude/ and $HOME/.claude/ and ./.claude/ with runtime-appropriate paths
-      // Skip generic replacement for Copilot — convertClaudeToCopilotContent handles all paths
       let content = fs.readFileSync(srcPath, 'utf8');
       if (!isCopilot && !isAntigravity) {
         const globalClaudeRegex = /~\/\.claude\//g;
@@ -3889,11 +3998,13 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
         const localClaudeRegex = /\.\/\.claude\//g;
         content = content.replace(globalClaudeRegex, pathPrefix);
         content = content.replace(globalClaudeHomeRegex, pathPrefix);
-        content = content.replace(localClaudeRegex, `./${dirName}/`);
+        content = content.replace(localClaudeRegex, runtime === 'opencode' ? './.agents/' : `./${dirName}/`);
+        if (isOpencode) {
+          content = content.replace(/\.\/\.opencode\//g, './.agents/');
+        }
       }
       content = processAttribution(content, getCommitAttribution(runtime));
 
-      // Convert frontmatter for opencode compatibility
       if (isOpencode || isKilo) {
         content = isKilo
           ? convertClaudeToKiloFrontmatter(content)
@@ -3901,10 +4012,8 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
         fs.writeFileSync(destPath, content);
       } else if (runtime === 'gemini') {
         if (isCommand) {
-          // Convert to TOML for Gemini (strip <sub> tags — terminals can't render subscript)
           content = stripSubTags(content);
           const tomlContent = convertClaudeToGeminiToml(content);
-          // Replace extension with .toml
           const tomlPath = destPath.replace(/\.md$/, '.toml');
           fs.writeFileSync(tomlPath, tomlContent);
         } else {
@@ -3934,25 +4043,21 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
         fs.writeFileSync(destPath, content);
       }
     } else if (isCopilot && (entry.name.endsWith('.cjs') || entry.name.endsWith('.js'))) {
-      // Copilot: also transform .cjs/.js files for CONV-06 and CONV-07
       let content = fs.readFileSync(srcPath, 'utf8');
       content = convertClaudeToCopilotContent(content, isGlobal);
       fs.writeFileSync(destPath, content);
     } else if (isAntigravity && (entry.name.endsWith('.cjs') || entry.name.endsWith('.js'))) {
-      // Antigravity: also transform .cjs/.js files for path/command conversions
       let content = fs.readFileSync(srcPath, 'utf8');
       content = convertClaudeToAntigravityContent(content, isGlobal);
       fs.writeFileSync(destPath, content);
     } else if (isCursor && (entry.name.endsWith('.cjs') || entry.name.endsWith('.js'))) {
-      // For Cursor, also convert Claude references in JS/CJS utility scripts
       let jsContent = fs.readFileSync(srcPath, 'utf8');
       jsContent = jsContent.replace(/wsf-/gi, 'wsf-');
-      jsContent = jsContent.replace(/\.claude\/skills\//g, '.cursor/skills/');
+      jsContent = jsContent.replace(/\.claude\/skills\//g, '.cursor/rules/');
       jsContent = jsContent.replace(/CLAUDE\.md/g, '.cursor/rules/');
       jsContent = jsContent.replace(/\bClaude Code\b/g, 'Cursor');
       fs.writeFileSync(destPath, jsContent);
     } else if (isWindsurf && (entry.name.endsWith('.cjs') || entry.name.endsWith('.js'))) {
-      // For Windsurf, also convert Claude references in JS/CJS utility scripts
       let jsContent = fs.readFileSync(srcPath, 'utf8');
       jsContent = jsContent.replace(/wsf-/gi, 'wsf-');
       jsContent = jsContent.replace(/\.claude\/skills\//g, '.windsurf/skills/');
@@ -3981,6 +4086,7 @@ function cleanupOrphanedFiles(configDir) {
   const orphanedFiles = [
     'hooks/wsf-notify.sh',  // Removed in v1.6.x
     'hooks/statusline.js',  // Renamed to wsf-statusline.js in v1.9.0
+    'hooks/wsf-check-update.js',  // Removed when update flow was deleted
   ];
 
   for (const relPath of orphanedFiles) {
@@ -3999,6 +4105,7 @@ function cleanupOrphanedHooks(settings) {
   const orphanedHookPatterns = [
     'wsf-notify.sh',  // Removed in v1.6.x
     'hooks/statusline.js',  // Renamed to wsf-statusline.js in v1.9.0
+    'wsf-check-update.js',  // Removed when update flow was deleted
     'wsf-intel-index.js',  // Removed in v1.9.2
     'wsf-intel-session.js',  // Removed in v1.9.2
     'wsf-intel-prune.js',  // Removed in v1.9.2
@@ -4150,7 +4257,15 @@ function uninstall(isGlobal, runtime = 'claude') {
   // Get the target directory based on runtime and install type
   const targetDir = isGlobal
     ? getGlobalDir(runtime, explicitConfigDir)
-    : path.join(process.cwd(), dirName);
+    : path.join(process.cwd(), getInstallRootDirName(runtime, isGlobal));
+
+  const opencodeCompatDir = isOpencode && !isGlobal
+    ? getOpencodeLocalInstallRoots(process.cwd()).compatRoot
+    : null;
+
+  if (isOpencode && opencodeCompatDir) {
+    fs.mkdirSync(opencodeCompatDir, { recursive: true });
+  }
 
   const locationLabel = isGlobal
     ? targetDir.replace(os.homedir(), '~')
@@ -4181,17 +4296,34 @@ function uninstall(isGlobal, runtime = 'claude') {
 
   // 1. Remove WSF commands/skills
   if (isOpencode || isKilo) {
-    // OpenCode/Kilo: remove command/wsf-*.md files
+    // OpenCode/Kilo: remove skills/wsf-*/ directories
+    const primarySkillsDir = path.join(targetDir, 'skills');
+    const compatSkillsDir = isOpencode && opencodeCompatDir ? path.join(opencodeCompatDir, 'skills') : null;
+    const skillCount = removeWsfSkillDirs(primarySkillsDir) + (compatSkillsDir ? removeWsfSkillDirs(compatSkillsDir) : 0);
+    if (skillCount > 0) {
+      removedCount++;
+      if (isOpencode && !isGlobal) {
+        console.log(`  ${green}✓${reset} Removed ${skillCount} WSF skills from .agents/skills and legacy .opencode/skills`);
+      } else {
+        console.log(`  ${green}✓${reset} Removed ${skillCount} WSF skills from skills/`);
+      }
+    }
+
+    // Also clean up legacy command/wsf-*.md files from older installs
     const commandDir = path.join(targetDir, 'command');
     if (fs.existsSync(commandDir)) {
+      let cmdCount = 0;
       const files = fs.readdirSync(commandDir);
       for (const file of files) {
         if (file.startsWith('wsf-') && file.endsWith('.md')) {
           fs.unlinkSync(path.join(commandDir, file));
-          removedCount++;
+          cmdCount++;
         }
       }
-      console.log(`  ${green}✓${reset} Removed WSF commands from command/`);
+      if (cmdCount > 0) {
+        removedCount++;
+        console.log(`  ${green}✓${reset} Removed ${cmdCount} legacy WSF commands from command/`);
+      }
     }
   } else if (isCodex || isCursor || isWindsurf || isTrae) {
     // Codex/Cursor/Windsurf/Trae: remove skills/wsf-*/SKILL.md skill directories
@@ -4361,25 +4493,20 @@ function uninstall(isGlobal, runtime = 'claude') {
       }
     }
   } else {
-    // Claude Code local: remove commands/wsf/ (primary local install location since #1736)
-    const wsfCommandsDir = path.join(targetDir, 'commands', 'wsf');
-    if (fs.existsSync(wsfCommandsDir)) {
-      // Preserve user-generated files before wipe (#1423)
-      const devPrefsPath = path.join(wsfCommandsDir, 'dev-preferences.md');
-      const preservedDevPrefs = fs.existsSync(devPrefsPath) ? fs.readFileSync(devPrefsPath, 'utf-8') : null;
-
-      fs.rmSync(wsfCommandsDir, { recursive: true });
-      removedCount++;
-      console.log(`  ${green}✓${reset} Removed commands/wsf/`);
-
-      if (preservedDevPrefs) {
-        try {
-          fs.mkdirSync(wsfCommandsDir, { recursive: true });
-          fs.writeFileSync(devPrefsPath, preservedDevPrefs);
-          console.log(`  ${green}✓${reset} Preserved commands/wsf/dev-preferences.md`);
-        } catch (err) {
-          console.error(`  ${red}✗${reset} Failed to restore dev-preferences.md: ${err.message}`);
+    // Claude Code local: remove skills/wsf-*/ directories (matches local install format)
+    const skillsDir = path.join(targetDir, 'skills');
+    if (fs.existsSync(skillsDir)) {
+      let skillCount = 0;
+      const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && entry.name.startsWith('wsf-')) {
+          fs.rmSync(path.join(skillsDir, entry.name), { recursive: true });
+          skillCount++;
         }
+      }
+      if (skillCount > 0) {
+        removedCount++;
+        console.log(`  ${green}✓${reset} Removed ${skillCount} skills/wsf-*/`);
       }
     }
   }
@@ -4427,7 +4554,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   // 4. Remove WSF hooks
   const hooksDir = path.join(targetDir, 'hooks');
   if (fs.existsSync(hooksDir)) {
-    const wsfHooks = ['wsf-statusline.js', 'wsf-context-monitor.js', 'wsf-prompt-guard.js', 'wsf-read-guard.js', 'wsf-workflow-guard.js', 'wsf-session-state.sh', 'wsf-validate-commit.sh', 'wsf-phase-boundary.sh'];
+    const wsfHooks = ['wsf-statusline.js', 'wsf-context-monitor.js', 'wsf-prompt-guard.js', 'wsf-read-guard.js', 'wsf-workflow-guard.js', 'wsf-session-state.sh', 'wsf-validate-commit.sh', 'wsf-phase-boundary.sh', 'wsf-check-update.js'];
     let hookCount = 0;
     for (const hook of wsfHooks) {
       const hookPath = path.join(hooksDir, hook);
@@ -4480,6 +4607,7 @@ function uninstall(isGlobal, runtime = 'claude') {
     // user hooks that share an entry with a WSF hook (#1755 followup)
     const isGsdHookCommand = (cmd) =>
       cmd && (cmd.includes('wsf-statusline') ||
+        cmd.includes('wsf-check-update') ||
         cmd.includes('wsf-session-state') || cmd.includes('wsf-context-monitor') ||
         cmd.includes('wsf-phase-boundary') || cmd.includes('wsf-prompt-guard') ||
         cmd.includes('wsf-read-guard') || cmd.includes('wsf-validate-commit') ||
@@ -4603,9 +4731,16 @@ function uninstall(isGlobal, runtime = 'claude') {
 
   // Remove the file manifest that the installer wrote at install time.
   // Without this step the metadata file persists after uninstall (#1908).
-  const manifestPath = path.join(targetDir, MANIFEST_NAME);
-  if (fs.existsSync(manifestPath)) {
-    fs.rmSync(manifestPath, { force: true });
+  const manifestRoots = isOpencode && opencodeCompatDir ? [targetDir, opencodeCompatDir] : [targetDir];
+  let removedManifest = false;
+  for (const root of manifestRoots) {
+    const manifestPath = path.join(root, MANIFEST_NAME);
+    if (fs.existsSync(manifestPath)) {
+      fs.rmSync(manifestPath, { force: true });
+      removedManifest = true;
+    }
+  }
+  if (removedManifest) {
     removedCount++;
     console.log(`  ${green}✓${reset} Removed ${MANIFEST_NAME}`);
   }
@@ -4912,6 +5047,7 @@ function generateManifest(dir, baseDir) {
  * Write file manifest after installation for future modification detection
  */
 function writeManifest(configDir, runtime = 'claude') {
+  fs.mkdirSync(configDir, { recursive: true });
   const isOpencode = runtime === 'opencode';
   const isKilo = runtime === 'kilo';
   const isGemini = runtime === 'gemini';
@@ -4921,11 +5057,12 @@ function writeManifest(configDir, runtime = 'claude') {
   const isCursor = runtime === 'cursor';
   const isWindsurf = runtime === 'windsurf';
   const isTrae = runtime === 'trae';
-  const wsfDir = path.join(configDir, 'wsf');
-  const commandsDir = path.join(configDir, 'commands', 'wsf');
-  const opencodeCommandDir = path.join(configDir, 'command');
-  const codexSkillsDir = path.join(configDir, 'skills');
-  const agentsDir = path.join(configDir, 'agents');
+  const manifestBaseDir = getManifestBaseDir(configDir, runtime);
+  const wsfDir = path.join(manifestBaseDir, 'wsf');
+  const commandsDir = path.join(manifestBaseDir, 'commands', 'wsf');
+  const opencodeCommandDir = path.join(manifestBaseDir, 'command');
+  const codexSkillsDir = path.join(manifestBaseDir, 'skills');
+  const agentsDir = path.join(manifestBaseDir, 'agents');
   const manifest = { version: pkg.version, timestamp: new Date().toISOString(), files: {} };
 
   const wsfHashes = generateManifest(wsfDir);
@@ -4945,7 +5082,7 @@ function writeManifest(configDir, runtime = 'claude') {
       }
     }
   }
-  if ((isCodex || isCopilot || isAntigravity || isCursor || isWindsurf || isTrae || (!isOpencode && !isGemini)) && fs.existsSync(codexSkillsDir)) {
+  if ((isOpencode || isKilo || isCodex || isCopilot || isAntigravity || isCursor || isWindsurf || isTrae || (!isGemini)) && fs.existsSync(codexSkillsDir)) {
     for (const skillName of listCodexSkillNames(codexSkillsDir)) {
       const skillRoot = path.join(codexSkillsDir, skillName);
       const skillHashes = generateManifest(skillRoot);
@@ -4994,10 +5131,13 @@ function saveLocalPatches(configDir) {
   const patchesDir = path.join(configDir, PATCHES_DIR_NAME);
   const pristineDir = path.join(configDir, 'wsf-pristine');
   const modified = [];
+  const patchRoots = getRuntimePatchRoots(configDir, path.basename(configDir) === '.opencode' ? 'opencode' : 'claude');
 
   for (const [relPath, originalHash] of Object.entries(manifest.files || {})) {
-    const fullPath = path.join(configDir, relPath);
-    if (!fs.existsSync(fullPath)) continue;
+    const fullPath = patchRoots
+      .map(root => path.join(root, relPath))
+      .find(candidate => fs.existsSync(candidate));
+    if (!fullPath || !fs.existsSync(fullPath)) continue;
     const currentHash = fileHash(fullPath);
     if (currentHash !== originalHash) {
       // Back up the user's modified version
@@ -5089,7 +5229,11 @@ function install(isGlobal, runtime = 'claude') {
   // Get the target directory based on runtime and install type
   const targetDir = isGlobal
     ? getGlobalDir(runtime, explicitConfigDir)
-    : path.join(process.cwd(), dirName);
+    : path.join(process.cwd(), getInstallRootDirName(runtime, isGlobal));
+
+  const opencodeCompatDir = isOpencode && !isGlobal
+    ? getOpencodeLocalInstallRoots(process.cwd()).compatRoot
+    : null;
 
   const locationLabel = isGlobal
     ? targetDir.replace(os.homedir(), '~')
@@ -5124,25 +5268,74 @@ function install(isGlobal, runtime = 'claude') {
   const failures = [];
 
   // Save any locally modified WSF files before they get wiped
-  saveLocalPatches(targetDir);
+  saveLocalPatches(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir);
 
   // Clean up orphaned files from previous versions
   cleanupOrphanedFiles(targetDir);
+  if (isOpencode && opencodeCompatDir) {
+    cleanupOrphanedFiles(opencodeCompatDir);
+  }
 
-  // OpenCode/Kilo use command/ (flat), Codex uses skills/, Claude/Gemini use commands/wsf/
+  if (isOpencode) {
+    cleanupLegacyOpencodeLocalArtifacts(process.cwd());
+    const hooksDir = path.join(targetDir, 'hooks');
+    const legacyOpencodeHooks = [
+      'wsf-check-update.js',
+      'wsf-statusline.js',
+      'wsf-context-monitor.js',
+      'wsf-prompt-guard.js',
+      'wsf-read-guard.js',
+      'wsf-workflow-guard.js',
+      'wsf-session-state.sh',
+      'wsf-validate-commit.sh',
+      'wsf-phase-boundary.sh',
+    ];
+
+    if (fs.existsSync(hooksDir)) {
+      let removedLegacyHookCount = 0;
+      for (const hook of legacyOpencodeHooks) {
+        const hookPath = path.join(hooksDir, hook);
+        if (fs.existsSync(hookPath)) {
+          fs.unlinkSync(hookPath);
+          removedLegacyHookCount += 1;
+        }
+      }
+      if (removedLegacyHookCount > 0) {
+        console.log(`  ${green}✓${reset} Removed ${removedLegacyHookCount} unsupported OpenCode hook files`);
+      }
+      if (fs.existsSync(hooksDir) && fs.readdirSync(hooksDir).length === 0) {
+        fs.rmdirSync(hooksDir);
+      }
+    }
+
+    const pkgJsonPath = path.join(targetDir, 'package.json');
+    if (fs.existsSync(pkgJsonPath)) {
+      try {
+        const content = fs.readFileSync(pkgJsonPath, 'utf8').trim();
+        if (content === '{"type":"commonjs"}') {
+          fs.unlinkSync(pkgJsonPath);
+          console.log(`  ${green}✓${reset} Removed legacy OpenCode package.json marker`);
+        }
+      } catch (e) {
+        // Ignore read errors
+      }
+    }
+  }
+
   if (isOpencode || isKilo) {
-    // OpenCode/Kilo: flat structure in command/ directory
-    const commandDir = path.join(targetDir, 'command');
-    fs.mkdirSync(commandDir, { recursive: true });
-
-    // Copy commands/wsf/*.md as command/wsf-*.md (flatten structure)
+    const skillsDir = path.join(targetDir, 'skills');
     const wsfSrc = path.join(src, 'commands', 'wsf');
-    copyFlattenedCommands(wsfSrc, commandDir, 'wsf', pathPrefix, runtime);
-    if (verifyInstalled(commandDir, 'command/wsf-*')) {
-      const count = fs.readdirSync(commandDir).filter(f => f.startsWith('wsf-')).length;
-      console.log(`  ${green}✓${reset} Installed ${count} commands to command/`);
+    copyCommandsAsOpencodeSkills(wsfSrc, skillsDir, 'wsf', pathPrefix, runtime);
+    if (fs.existsSync(skillsDir)) {
+      const count = fs.readdirSync(skillsDir, { withFileTypes: true })
+        .filter(e => e.isDirectory() && e.name.startsWith('wsf-')).length;
+      if (count > 0) {
+        console.log(`  ${green}✓${reset} Installed ${count} skills to ${isOpencode && !isGlobal ? '.agents/skills/' : 'skills/'}`);
+      } else {
+        failures.push('skills/wsf-*');
+      }
     } else {
-      failures.push('command/wsf-*');
+      failures.push('skills/wsf-*');
     }
   } else if (isCodex) {
     const skillsDir = path.join(targetDir, 'skills');
@@ -5262,35 +5455,30 @@ function install(isGlobal, runtime = 'claude') {
       restoreUserArtifacts(legacyCommandsDir, savedLegacyArtifacts);
     }
   } else {
-    // Claude Code local: install BOTH commands/wsf/ AND skills/wsf-*/
-    // Claude Code 2.x reads both from local .claude/ directory
-    const wsfSrc = path.join(src, 'commands', 'wsf');
-
-    // Install commands
-    const commandsDir = path.join(targetDir, 'commands');
-    fs.mkdirSync(commandsDir, { recursive: true });
-    const wsfCmdDest = path.join(commandsDir, 'wsf');
-    copyWithPathReplacement(wsfSrc, wsfCmdDest, pathPrefix, runtime, true, isGlobal);
-    if (verifyInstalled(wsfCmdDest, 'commands/wsf')) {
-      const cmdCount = fs.readdirSync(wsfCmdDest).filter(f => f.endsWith('.md')).length;
-      console.log(`  ${green}✓${reset} Installed ${cmdCount} commands to commands/wsf/`);
-    } else {
-      failures.push('commands/wsf');
-    }
-
-    // Install skills
+    // Claude Code local: skills/ format (matches global install logic)
     const skillsDir = path.join(targetDir, 'skills');
+    const wsfSrc = path.join(src, 'commands', 'wsf');
     copyCommandsAsClaudeSkills(wsfSrc, skillsDir, 'wsf', pathPrefix, runtime, isGlobal);
     if (fs.existsSync(skillsDir)) {
-      const skillCount = fs.readdirSync(skillsDir, { withFileTypes: true })
+      const count = fs.readdirSync(skillsDir, { withFileTypes: true })
         .filter(e => e.isDirectory() && e.name.startsWith('wsf-')).length;
-      if (skillCount > 0) {
-        console.log(`  ${green}✓${reset} Installed ${skillCount} skills to skills/`);
+      if (count > 0) {
+        console.log(`  ${green}✓${reset} Installed ${count} skills to skills/`);
       } else {
         failures.push('skills/wsf-*');
       }
     } else {
       failures.push('skills/wsf-*');
+    }
+
+    // Clean up legacy commands/wsf/ from previous local installs
+    // Preserve user-generated files (dev-preferences.md) before wiping the directory
+    const legacyCommandsDir = path.join(targetDir, 'commands', 'wsf');
+    if (fs.existsSync(legacyCommandsDir)) {
+      const savedLegacyArtifacts = preserveUserArtifacts(legacyCommandsDir, ['dev-preferences.md']);
+      fs.rmSync(legacyCommandsDir, { recursive: true });
+      console.log(`  ${green}✓${reset} Removed legacy commands/wsf/ directory`);
+      restoreUserArtifacts(legacyCommandsDir, savedLegacyArtifacts);
     }
   }
 
@@ -5338,6 +5526,10 @@ function install(isGlobal, runtime = 'claude') {
           content = content.replace(homeDirRegex, pathPrefix);
           content = content.replace(bareDirRegex, normalizedPathPrefix);
           content = content.replace(bareHomeDirRegex, normalizedPathPrefix);
+          if (isOpencode) {
+            content = content.replace(/\.\/\.claude\//g, './.agents/');
+            content = content.replace(/\.\/\.opencode\//g, './.agents/');
+          }
         }
         content = processAttribution(content, getCommitAttribution(runtime));
         // Convert frontmatter for runtime compatibility (agents need different handling)
@@ -5394,7 +5586,7 @@ function install(isGlobal, runtime = 'claude') {
     failures.push('VERSION');
   }
 
-  if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae) {
+  if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae && !isOpencode) {
     // Write package.json to force CommonJS mode for WSF scripts
     // Prevents "require is not defined" errors when project has "type": "module"
     // Node.js walks up looking for package.json - this stops inheritance from project
@@ -5453,11 +5645,11 @@ function install(isGlobal, runtime = 'claude') {
   }
 
   // Write file manifest for future modification detection
-  writeManifest(targetDir, runtime);
+  writeManifest(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);
   console.log(`  ${green}✓${reset} Wrote file manifest (${MANIFEST_NAME})`);
 
   // Report any backed-up local patches
-  reportLocalPatches(targetDir, runtime);
+  reportLocalPatches(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);
 
   // Verify no leaked .claude paths in non-Claude runtimes
   if (runtime !== 'claude') {
@@ -5514,7 +5706,7 @@ function install(isGlobal, runtime = 'claude') {
     console.log(`  ${green}✓${reset} Generated config.toml with ${agentCount} agent roles`);
     console.log(`  ${green}✓${reset} Generated ${agentCount} agent .toml config files`);
 
-    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
   }
 
   if (isCopilot) {
@@ -5527,22 +5719,22 @@ function install(isGlobal, runtime = 'claude') {
       console.log(`  ${green}✓${reset} Generated copilot-instructions.md`);
     }
     // Copilot: no settings.json, no hooks, no statusline (like Codex)
-    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
   }
 
   if (isCursor) {
     // Cursor uses skills — no config.toml, no settings.json hooks needed
-    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
   }
 
   if (isWindsurf) {
     // Windsurf uses skills — no config.toml, no settings.json hooks needed
-    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
   }
 
   if (isTrae) {
     // Trae uses skills — no settings.json hooks needed
-    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
   }
 
   // Configure statusline and hooks in settings.json
@@ -5584,6 +5776,10 @@ function install(isGlobal, runtime = 'claude') {
 
   // Configure hooks for runtimes that support them (skip for opencode/kilo)
   if (!isOpencode && !isKilo) {
+    // Initialize hooks object if not present
+    if (!settings.hooks) {
+      settings.hooks = {};
+    }
     // Configure post-tool hook for context window monitoring
     if (!settings.hooks[postToolEvent]) {
       settings.hooks[postToolEvent] = [];
@@ -5745,6 +5941,9 @@ function install(isGlobal, runtime = 'claude') {
     const sessionStateCommand = isGlobal
       ? 'bash ' + targetDir.replace(/\\/g, '/') + '/hooks/wsf-session-state.sh'
       : 'bash ' + localPrefix + '/hooks/wsf-session-state.sh';
+    if (!settings.hooks.SessionStart) {
+      settings.hooks.SessionStart = [];
+    }
     const hasSessionStateHook = settings.hooks.SessionStart.some(entry =>
       entry.hooks && entry.hooks.some(h => h.command && h.command.includes('wsf-session-state'))
     );
@@ -5788,7 +5987,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   }
 
-  return { settingsPath, settings, statuslineCommand, runtime, configDir: targetDir };
+  return { settingsPath, settings, statuslineCommand, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
 }
 
 /**
@@ -5812,7 +6011,7 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   }
 
   // Write settings when runtime supports settings.json
-  if (!isCodex && !isCopilot && !isKilo && !isCursor && !isWindsurf && !isTrae) {
+  if (!isOpencode && !isCodex && !isCopilot && !isKilo && !isCursor && !isWindsurf && !isTrae) {
     writeSettings(settingsPath, settings);
   }
 
@@ -6106,6 +6305,7 @@ if (process.env.WSF_TEST_MODE) {
     uninstall,
     convertClaudeCommandToCodexSkill,
     convertClaudeToOpencodeFrontmatter,
+    convertClaudeCommandToOpencodeSkill,
     convertClaudeToKiloFrontmatter,
     configureOpencodePermissions,
     neutralizeAgentReferences,

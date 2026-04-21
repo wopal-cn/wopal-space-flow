@@ -51,6 +51,11 @@ function build() {
     fs.mkdirSync(DIST_DIR, { recursive: true });
   }
 
+  // Clean dist first so removed hooks do not linger as stale install artifacts.
+  for (const entry of fs.readdirSync(DIST_DIR)) {
+    fs.rmSync(path.join(DIST_DIR, entry), { recursive: true, force: true });
+  }
+
   let hasErrors = false;
 
   // Copy hooks to dist with syntax validation

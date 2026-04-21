@@ -17,6 +17,7 @@ process.env.WSF_TEST_MODE = '1';
 const {
   convertClaudeToOpencodeFrontmatter,
   convertClaudeToKiloFrontmatter,
+  convertClaudeCommandToOpencodeSkill,
   convertClaudeToGeminiAgent,
   neutralizeAgentReferences,
 } = require('../bin/install.js');
@@ -185,6 +186,16 @@ Fallback skills live in .agents/skills/.`;
     });
   });
 }
+
+describe('OpenCode skill conversion', () => {
+  test('keeps name field for SKILL.md output', () => {
+    const result = convertClaudeCommandToOpencodeSkill(SAMPLE_COMMAND, 'wsf-execute-phase');
+    const frontmatter = result.split('---')[1];
+    assert.ok(frontmatter.includes('name: wsf-execute-phase'), 'name: should be preserved for OpenCode skills');
+    assert.ok(frontmatter.includes('description:'), 'description should be kept');
+    assert.ok(frontmatter.includes('tools:'), 'tools block should exist');
+  });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Gemini CLI agent conversion (merged from gemini-config.test.cjs)

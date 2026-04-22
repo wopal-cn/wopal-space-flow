@@ -337,11 +337,22 @@ async function main() {
     let projectArg = null;
     let phaseRequired = false;
 
-    if (workflow === 'new-project' || workflow === 'map-codebase' || workflow === 'progress') {
+    const PROJECT_AWARE_WORKFLOWS = [
+      'new-project', 'map-codebase', 'progress',
+      'new-milestone', 'resume', 'milestone-op', 'manager',
+      'stats', 'health', 'pr-branch', 'undo'
+    ];
+
+    const PHASE_REQUIRED_WORKFLOWS = [
+      'plan-phase', 'phase-op', 'execute-phase', 'verify-work',
+      'code-review', 'add-tests', 'research-phase', 'ship'
+    ];
+
+    if (PROJECT_AWARE_WORKFLOWS.includes(workflow)) {
       ({ project: projectArg } = parseProjectPhaseArgs(args.slice(2)));
     }
 
-    if (workflow === 'plan-phase' || workflow === 'phase-op' || workflow === 'execute-phase' || workflow === 'verify-work') {
+    if (PHASE_REQUIRED_WORKFLOWS.includes(workflow)) {
       phaseRequired = true;
       ({ project: projectArg } = parseProjectPhaseArgs(args.slice(2), { phaseRequired }));
     }
@@ -357,7 +368,9 @@ async function main() {
       const looksLikeWorkspaceRoot = fs.existsSync(path.join(start, 'projects'))
         && fs.statSync(path.join(start, 'projects')).isDirectory()
         && !fs.existsSync(path.join(start, '.planning'));
-      if (looksLikeWorkspaceRoot && (workflow === 'new-project' || workflow === 'map-codebase' || workflow === 'progress' || workflow === 'plan-phase' || workflow === 'phase-op' || workflow === 'execute-phase' || workflow === 'verify-work')) {
+      const projectAwareFromRoot = PROJECT_AWARE_WORKFLOWS.includes(workflow)
+        || PHASE_REQUIRED_WORKFLOWS.includes(workflow);
+      if (looksLikeWorkspaceRoot && projectAwareFromRoot) {
         error(`Project argument required when running ${workflow} from workspace root`);
       }
     }
@@ -877,8 +890,20 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
         case 'remove-workspace':
           init.cmdInitRemoveWorkspace(cwd, args[2], raw);
           break;
+        case 'stats':
+          init.cmdInitStats(cwd, raw);
+          break;
+        case 'health':
+          init.cmdInitHealth(cwd, raw);
+          break;
+        case 'pr-branch':
+          init.cmdInitPrBranch(cwd, raw);
+          break;
+        case 'undo':
+          init.cmdInitUndo(cwd, raw);
+          break;
         default:
-          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, milestone-op, map-codebase, progress, manager, new-workspace, list-workspaces, remove-workspace`);
+          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, milestone-op, map-codebase, progress, manager, stats, health, pr-branch, undo, new-workspace, list-workspaces, remove-workspace`);
       }
       break;
     }

@@ -8,11 +8,32 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+<step name="init_context">
+**Load project context from workspace root:**
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init stats $ARGUMENTS)
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `project_root`, `project_exists`.
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
+
+If `project_exists` is false (no `.planning/` directory):
+```
+No planning structure found at $PROJECT_ROOT
+
+Run /wsf-new-project to start a new project.
+```
+Exit.
+</step>
+
 <step name="gather_stats">
 Gather project statistics:
 
 ```bash
-STATS=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" stats json)
+STATS=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" stats json)
 if [[ "$STATS" == @file:* ]]; then STATS=$(cat "${STATS#@file:}"); fi
 ```
 

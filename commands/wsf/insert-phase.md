@@ -1,7 +1,7 @@
 ---
 name: wsf-insert-phase
 description: Insert urgent work as decimal phase (e.g., 72.1) between existing phases
-argument-hint: <after> <description>
+argument-hint: "<after> <description> [project]"
 allowed-tools:
   - Read
   - Write
@@ -21,9 +21,11 @@ Purpose: Handle urgent work discovered during execution without renumbering enti
 </execution_context>
 
 <context>
-Arguments: $ARGUMENTS (format: <after-phase-number> <description>)
+After: phase number to insert after (first positional argument)
+Description: phase description text (second positional argument)
+Project: optional positional project name (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted tool calls.
+Roadmap and state are resolved in-workflow via `init insert-phase` and targeted tool calls.
 </context>
 
 <process>

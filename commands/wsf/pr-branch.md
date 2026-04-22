@@ -1,7 +1,7 @@
 ---
 name: wsf-pr-branch
 description: Create a clean PR branch by filtering out .planning/ commits — ready for code review
-argument-hint: "[target branch, default: main]"
+argument-hint: "[project] [target branch, default: main]"
 allowed-tools:
   - Bash
   - Read
@@ -19,6 +19,11 @@ changes that are irrelevant to code review.
 <execution_context>
 @~/.claude/wsf/workflows/pr-branch.md
 </execution_context>
+
+<context>
+Project: optional first positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
+Target branch: optional second positional argument (default: main).
+</context>
 
 <process>
 Execute the pr-branch workflow from @~/.claude/wsf/workflows/pr-branch.md end-to-end.

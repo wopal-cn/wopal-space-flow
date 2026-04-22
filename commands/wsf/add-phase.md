@@ -1,7 +1,7 @@
 ---
 name: wsf-add-phase
 description: Add phase to end of current milestone in roadmap
-argument-hint: <description>
+argument-hint: "<description> [project]"
 allowed-tools:
   - Read
   - Write
@@ -23,9 +23,10 @@ Routes to the add-phase workflow which handles:
 </execution_context>
 
 <context>
-Arguments: $ARGUMENTS (phase description)
+Description: phase description text (first positional argument)
+Project: optional positional project name (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted tool calls.
+Roadmap and state are resolved in-workflow via `init add-phase` and targeted tool calls.
 </context>
 
 <process>

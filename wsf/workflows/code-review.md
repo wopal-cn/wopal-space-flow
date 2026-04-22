@@ -21,7 +21,10 @@ INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`.
+Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`, `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
 
 **Input sanitization (defense-in-depth):**
 ```bash
@@ -74,7 +77,7 @@ fi
 Check if code review is enabled via config:
 
 ```bash
-CODE_REVIEW_ENABLED=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get workflow.code_review 2>/dev/null || echo "true")
 ```
 
 If CODE_REVIEW_ENABLED is "false":
@@ -97,7 +100,7 @@ Determine review depth with priority order:
 if [ -n "$DEPTH_OVERRIDE" ]; then
   REVIEW_DEPTH="$DEPTH_OVERRIDE"
 else
-  CONFIG_DEPTH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get workflow.code_review_depth 2>/dev/null || echo "")
+  CONFIG_DEPTH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get workflow.code_review_depth 2>/dev/null || echo "")
   REVIEW_DEPTH="${CONFIG_DEPTH:-standard}"
 fi
 ```
@@ -395,7 +398,7 @@ if [ -f "${REVIEW_PATH}" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit \
+      node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit \
         "docs(${PADDED_PHASE}): add code review report" \
         --files "${REVIEW_PATH}"
     fi

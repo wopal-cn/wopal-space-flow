@@ -37,7 +37,10 @@ INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`.
+Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`, `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
 
 Verify the phase directory exists. If not:
 ```
@@ -297,7 +300,7 @@ Create a test coverage report and present to user:
 
 Record test generation in project state:
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" state-snapshot
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" state-snapshot
 ```
 
 If there are passing tests to commit:

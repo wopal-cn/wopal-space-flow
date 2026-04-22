@@ -11,7 +11,19 @@ Valid WSF subagent types (use exact names — do not fall back to 'general-purpo
 
 <process>
 
-## Step 0: Resolve Model Profile
+## Step 0: Initialize Context
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${PHASE}")
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `phase_dir`, `padded_phase`, `phase_number`, `state_path`, `requirements_path`, `context_path`, `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
+
+## Step 1: Resolve Model Profile
 
 @~/.claude/wsf/references/model-profile-resolution.md
 
@@ -23,7 +35,7 @@ Resolve model for:
 @~/.claude/wsf/references/phase-argument-parsing.md
 
 ```bash
-PHASE_INFO=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" roadmap get-phase "${PHASE}")
+PHASE_INFO=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" roadmap get-phase "${PHASE}")
 ```
 
 If `found` is false: Error and exit.
@@ -39,10 +51,8 @@ If exists: Offer update/view/skip options.
 ## Step 3: Gather Phase Context
 
 ```bash
-INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${PHASE}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-# Extract: phase_dir, padded_phase, phase_number, state_path, requirements_path, context_path
-AGENT_SKILLS_RESEARCHER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-researcher 2>/dev/null)
+# Phase context already loaded in Step 0
+AGENT_SKILLS_RESEARCHER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-researcher 2>/dev/null)
 ```
 
 ## Step 4: Spawn Researcher

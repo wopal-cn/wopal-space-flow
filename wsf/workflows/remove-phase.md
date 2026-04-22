@@ -10,30 +10,35 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <step name="parse_arguments">
 Parse the command arguments:
-- Argument is the phase number to remove (integer or decimal)
+- First argument is the phase number to remove (integer or decimal)
+- Optional second argument is the project name
 - Example: `/wsf-remove-phase 17` → phase = 17
 - Example: `/wsf-remove-phase 16.1` → phase = 16.1
+- Example: `/wsf-remove-phase 17 space-flow` → phase = 17, project = "space-flow"
 
 If no argument provided:
 
 ```
 ERROR: Phase number required
-Usage: /wsf-remove-phase <phase-number>
+Usage: /wsf-remove-phase <phase-number> [project]
 Example: /wsf-remove-phase 17
+Example: /wsf-remove-phase 17 space-flow
 ```
 
 Exit.
 </step>
 
 <step name="init_context">
-Load phase operation context:
+**Load project context from workspace root:**
 
 ```bash
-INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${target}")
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init remove-phase $ARGUMENTS)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Extract: `phase_found`, `phase_dir`, `phase_number`, `commit_docs`, `roadmap_exists`.
+Extract: `project_root`, `phase_found`, `phase_dir`, `phase_number`, `commit_docs`, `roadmap_exists`.
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
 
 Also read STATE.md and ROADMAP.md content for parsing current position.
 </step>
@@ -80,13 +85,13 @@ Wait for confirmation.
 **Delegate the entire removal operation to wsf-tools:**
 
 ```bash
-RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" phase remove "${target}")
+RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" phase remove "${target}")
 ```
 
 If the phase has executed plans (SUMMARY.md files), wsf-tools will error. Use `--force` only if the user confirms:
 
 ```bash
-RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" phase remove "${target}" --force)
+RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" phase remove "${target}" --force)
 ```
 
 The CLI handles:
@@ -103,7 +108,7 @@ Extract from result: `removed`, `directory_deleted`, `renamed_directories`, `ren
 Stage and commit the removal:
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "chore: remove phase {target} ({original-phase-name})" --files .planning/
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "chore: remove phase {target} ({original-phase-name})" --files .planning/
 ```
 
 The commit message preserves the historical record of what was removed.

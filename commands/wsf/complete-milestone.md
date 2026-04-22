@@ -2,7 +2,7 @@
 type: prompt
 name: wsf-complete-milestone
 description: Archive completed milestone and prepare for next version
-argument-hint: <version>
+argument-hint: "[project] <version>"
 allowed-tools:
   - Read
   - Write
@@ -24,6 +24,8 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
   </execution_context>
 
 <context>
+Project: optional positional project name (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
+
 **Project files:**
 - `.planning/ROADMAP.md`
 - `.planning/REQUIREMENTS.md`

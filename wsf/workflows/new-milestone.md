@@ -19,6 +19,23 @@ Valid WSF subagent types (use exact names — do not fall back to 'general-purpo
 
 <process>
 
+## 0. Init Context
+
+**Load project context from workspace root:**
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init new-milestone $ARGUMENTS)
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `project_root`, `project_exists`, `roadmap_exists`, `state_exists`, `config_path`.
+
+**Parse arguments:**
+- If `$ARGUMENTS` starts with a project name (e.g., `space-flow v1.1 Notifications`), extract project → set `$PROJECT_ROOT=projects/<project>/`
+- Remaining arguments → milestone name
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
+
 ## 1. Load Context
 
 Parse `$ARGUMENTS` before doing anything else:
@@ -140,11 +157,11 @@ Delete MILESTONE-CONTEXT.md if exists (consumed).
 Clear leftover phase directories from the previous milestone:
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" phases clear --confirm
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" phases clear --confirm
 ```
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs: start milestone v[X.Y] [Name]" --files .planning/PROJECT.md .planning/STATE.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "docs: start milestone v[X.Y] [Name]" --files .planning/PROJECT.md .planning/STATE.md
 ```
 
 ## 7. Load Context and Resolve Models
@@ -152,9 +169,9 @@ node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs: start milestone v[X.Y] 
 ```bash
 INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init new-milestone)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-project-researcher 2>/dev/null)
-AGENT_SKILLS_SYNTHESIZER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-synthesizer 2>/dev/null)
-AGENT_SKILLS_ROADMAPPER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-roadmapper 2>/dev/null)
+AGENT_SKILLS_RESEARCHER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-project-researcher 2>/dev/null)
+AGENT_SKILLS_SYNTHESIZER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-synthesizer 2>/dev/null)
+AGENT_SKILLS_ROADMAPPER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-roadmapper 2>/dev/null)
 ```
 
 Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`.
@@ -356,7 +373,7 @@ If "adjust": Return to scoping.
 
 **Commit requirements:**
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs: define milestone v[X.Y] requirements" --files .planning/REQUIREMENTS.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "docs: define milestone v[X.Y] requirements" --files .planning/REQUIREMENTS.md
 ```
 
 ## 10. Create Roadmap
@@ -440,7 +457,7 @@ Success criteria:
 
 **Commit roadmap** (after approval):
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
 ```
 
 ## 11. Done

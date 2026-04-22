@@ -19,6 +19,20 @@ Display the stage banner:
 ```
 </step>
 
+<step name="init_context">
+Initialize context and resolve project root:
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init undo "$ARGUMENTS")
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
+</step>
+
 <step name="parse_arguments">
 Parse $ARGUMENTS for the undo mode:
 

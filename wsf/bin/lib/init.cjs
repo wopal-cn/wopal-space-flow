@@ -1513,6 +1513,41 @@ function cmdAgentSkills(cwd, agentType, raw) {
   process.exit(0);
 }
 
+function cmdInitStats(cwd, raw) {
+  const config = loadConfig(cwd);
+  const milestone = getMilestoneInfo(cwd);
+  const projectExists = fs.existsSync(planningDir(cwd));
+  const result = withProjectRoot(cwd, {
+    project_exists: projectExists,
+    ...(projectExists ? { milestone_version: milestone.version, milestone_name: milestone.name } : {}),
+  });
+  output(JSON.stringify(result, null, 2), raw, result);
+}
+
+function cmdInitHealth(cwd, raw) {
+  const config = loadConfig(cwd);
+  const result = withProjectRoot(cwd, {
+    project_exists: fs.existsSync(planningDir(cwd)),
+  });
+  output(JSON.stringify(result, null, 2), raw, result);
+}
+
+function cmdInitPrBranch(cwd, raw) {
+  const config = loadConfig(cwd);
+  const result = withProjectRoot(cwd, {
+    project_exists: fs.existsSync(planningDir(cwd)),
+  });
+  output(JSON.stringify(result, null, 2), raw, result);
+}
+
+function cmdInitUndo(cwd, raw) {
+  const config = loadConfig(cwd);
+  const result = withProjectRoot(cwd, {
+    project_exists: fs.existsSync(planningDir(cwd)),
+  });
+  output(JSON.stringify(result, null, 2), raw, result);
+}
+
 module.exports = {
   cmdInitExecutePhase,
   cmdInitPlanPhase,
@@ -1530,6 +1565,10 @@ module.exports = {
   cmdInitNewWorkspace,
   cmdInitListWorkspaces,
   cmdInitRemoveWorkspace,
+  cmdInitStats,
+  cmdInitHealth,
+  cmdInitPrBranch,
+  cmdInitUndo,
   detectChildRepos,
   buildAgentSkillsBlock,
   cmdAgentSkills,

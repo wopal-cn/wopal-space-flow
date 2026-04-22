@@ -1,7 +1,7 @@
 ---
 name: wsf-remove-phase
 description: Remove a future phase from roadmap and renumber subsequent phases
-argument-hint: <phase-number>
+argument-hint: "<phase-number> [project]"
 allowed-tools:
   - Read
   - Write
@@ -20,9 +20,10 @@ Output: Phase deleted, all subsequent phases renumbered, git commit as historica
 </execution_context>
 
 <context>
-Phase: $ARGUMENTS
+Phase: phase number to remove (first positional argument)
+Project: optional positional project name (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted reads.
+Roadmap and state are resolved in-workflow via `init remove-phase` and targeted reads.
 </context>
 
 <process>

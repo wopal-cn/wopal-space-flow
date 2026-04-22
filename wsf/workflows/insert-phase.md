@@ -11,18 +11,22 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_arguments">
 Parse the command arguments:
 - First argument: integer phase number to insert after
-- Remaining arguments: phase description
-
-Example: `/wsf-insert-phase 72 Fix critical auth bug`
--> after = 72
--> description = "Fix critical auth bug"
+- Remaining arguments: phase description (may include optional project name at end)
+- Example: `/wsf-insert-phase 72 Fix critical auth bug`
+  -> after = 72
+  -> description = "Fix critical auth bug"
+- Example: `/wsf-insert-phase 72 Fix critical auth bug space-flow`
+  -> after = 72
+  -> description = "Fix critical auth bug"
+  -> project = "space-flow"
 
 If arguments missing:
 
 ```
 ERROR: Both phase number and description required
-Usage: /wsf-insert-phase <after> <description>
+Usage: /wsf-insert-phase <after> <description> [project]
 Example: /wsf-insert-phase 72 Fix critical auth bug
+Example: /wsf-insert-phase 72 Fix critical auth bug space-flow
 ```
 
 Exit.
@@ -31,12 +35,16 @@ Validate first argument is an integer.
 </step>
 
 <step name="init_context">
-Load phase operation context:
+**Load project context from workspace root:**
 
 ```bash
-INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${after_phase}")
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init insert-phase $ARGUMENTS)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
+
+Extract from init JSON: `project_root`, `roadmap_exists`, `after_phase`, `description`.
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
 
 Check `roadmap_exists` from init JSON. If false:
 ```
@@ -49,7 +57,7 @@ Exit.
 **Delegate the phase insertion to wsf-tools:**
 
 ```bash
-RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" phase insert "${after_phase}" "${description}")
+RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" phase insert "${after_phase}" "${description}")
 ```
 
 The CLI handles:

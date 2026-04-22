@@ -8,6 +8,20 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+<step name="init_context" priority="first">
+Initialize context and resolve project root:
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init health "$ARGUMENTS")
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
+</step>
+
 <step name="parse_args">
 **Parse arguments:**
 
@@ -25,7 +39,7 @@ fi
 **Run health validation:**
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" validate health $REPAIR_FLAG
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" validate health $REPAIR_FLAG
 ```
 
 Parse JSON output:
@@ -112,7 +126,7 @@ If yes, re-run with --repair flag and display results.
 Re-run health check without --repair to confirm issues are resolved:
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" validate health
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" validate health
 ```
 
 Report final status.

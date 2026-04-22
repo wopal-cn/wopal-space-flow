@@ -32,8 +32,8 @@ If $ARGUMENTS contains a phase number, load context:
 ```bash
 INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init verify-work ${ARGUMENTS})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-planner 2>/dev/null)
-AGENT_SKILLS_CHECKER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" agent-skills wsf-checker 2>/dev/null)
+AGENT_SKILLS_PLANNER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-planner 2>/dev/null)
+AGENT_SKILLS_CHECKER=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" agent-skills wsf-checker 2>/dev/null)
 ```
 
 Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `has_verification`, `uat_path`.
@@ -93,7 +93,7 @@ Before running manual UAT, check whether this phase has a UI component and wheth
 `mcp__playwright__*` or `mcp__puppeteer__*` tools are available in the current session.
 
 ```
-UI_PHASE_FLAG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get workflow.ui_phase --raw 2>/dev/null || echo "true")
+UI_PHASE_FLAG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get workflow.ui_phase --raw 2>/dev/null || echo "true")
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 ```
 
@@ -233,7 +233,7 @@ Proceed to `present_test`.
 Render the checkpoint from the structured UAT file instead of composing it freehand:
 
 ```bash
-CHECKPOINT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" uat render-checkpoint --file "$uat_path" --raw)
+CHECKPOINT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" uat render-checkpoint --file "$uat_path" --raw)
 if [[ "$CHECKPOINT" == @file:* ]]; then CHECKPOINT=$(cat "${CHECKPOINT#@file:}"); fi
 ```
 
@@ -389,7 +389,7 @@ Clear Current Test section:
 
 Commit the UAT file:
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
 ```
 
 Present summary:
@@ -413,7 +413,7 @@ Present summary:
 **If issues == 0:**
 
 ```bash
-SECURITY_CFG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get workflow.security_enforcement --raw 2>/dev/null || echo "true")
+SECURITY_CFG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get workflow.security_enforcement --raw 2>/dev/null || echo "true")
 SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
 ```
 

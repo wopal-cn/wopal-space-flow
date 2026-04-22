@@ -1,7 +1,7 @@
 ---
 name: wsf-research-phase
 description: Research how to implement a phase (standalone - usually use /wsf-plan-phase instead)
-argument-hint: "[phase]"
+argument-hint: "[phase] [project]"
 allowed-tools:
   - Read
   - Bash
@@ -29,7 +29,8 @@ Valid WSF subagent types (use exact names — do not fall back to 'general-purpo
 </available_agent_types>
 
 <context>
-Phase number: $ARGUMENTS (required)
+Phase number: $ARGUMENTS (first positional argument, required)
+Project: optional second positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
 Normalize phase input in step 1 before any directory lookups.
 </context>

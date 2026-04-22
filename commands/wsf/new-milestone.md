@@ -1,7 +1,7 @@
 ---
 name: wsf-new-milestone
 description: Start a new milestone cycle — update PROJECT.md and route to requirements
-argument-hint: "[milestone name, e.g., 'v1.1 Notifications']"
+argument-hint: "[project] [milestone name, e.g., 'v1.1 Notifications']"
 allowed-tools:
   - Read
   - Write
@@ -33,7 +33,8 @@ Brownfield equivalent of new-project. Project exists, PROJECT.md has history. Ga
 </execution_context>
 
 <context>
-Milestone name: $ARGUMENTS (optional - will prompt if not provided)
+Project: optional positional project name (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
+Milestone name: remaining arguments (optional - will prompt if not provided)
 
 Project and milestone context files are resolved inside the workflow (`init new-milestone`) and delegated via `<files_to_read>` blocks where subagents are used.
 </context>

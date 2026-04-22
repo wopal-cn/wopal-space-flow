@@ -1,7 +1,7 @@
 ---
 name: wsf-undo
 description: "Safe git revert. Roll back phase or plan commits using the phase manifest with dependency checks."
-argument-hint: "--last N | --phase NN | --plan NN-MM"
+argument-hint: "[project] --last N | --phase NN | --plan NN-MM"
 allowed-tools:
   - Read
   - Bash
@@ -26,7 +26,8 @@ Three modes:
 </execution_context>
 
 <context>
-$ARGUMENTS
+Project: optional first positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
+Undo mode: --last N | --phase NN | --plan NN-MM
 </context>
 
 <process>

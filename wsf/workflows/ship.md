@@ -16,18 +16,21 @@ INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`.
+Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`, `project_root`.
+
+**Project root context:**
+If `project_root` is set in init output, all file operations are scoped to `$PROJECT_ROOT`. If not set, defaults to current working directory.
 
 Also load config for branching strategy:
 ```bash
-CONFIG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" state load)
+CONFIG=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" state load)
 ```
 
 Extract: `branching_strategy`, `branch_name`.
 
 Detect base branch for PRs and merges:
 ```bash
-BASE_BRANCH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
+BASE_BRANCH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get git.base_branch 2>/dev/null || echo "")
 if [ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ]; then
   BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')
   BASE_BRANCH="${BASE_BRANCH:-main}"
@@ -186,13 +189,13 @@ Report the PR URL and suggest: "Review the diff at {url}/files"
 Update STATE.md to reflect the shipping action:
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" state update "Last Activity" "$(date +%Y-%m-%d)"
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
 ```
 
 If `commit_docs` is true:
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
 ```
 </step>
 

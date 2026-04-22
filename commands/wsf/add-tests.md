@@ -1,7 +1,7 @@
 ---
 name: wsf-add-tests
 description: Generate tests for a completed phase based on UAT criteria and implementation
-argument-hint: "<phase> [additional instructions]"
+argument-hint: "<phase> [project] [additional instructions]"
 allowed-tools:
   - Read
   - Write
@@ -29,7 +29,8 @@ Output: Test files committed with message `test(phase-{N}): add unit and E2E tes
 </execution_context>
 
 <context>
-Phase: $ARGUMENTS
+Phase: $ARGUMENTS (first positional argument is phase number)
+Project: optional second positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
 @.planning/STATE.md
 @.planning/ROADMAP.md

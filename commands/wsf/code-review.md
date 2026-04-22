@@ -1,7 +1,7 @@
 ---
 name: wsf-code-review
 description: Review source files changed during a phase for bugs, security issues, and code quality problems
-argument-hint: "<phase-number> [--depth=quick|standard|deep] [--files file1,file2,...]"
+argument-hint: "<phase-number> [project] [--depth=quick|standard|deep] [--files file1,file2,...]"
 allowed-tools:
   - Read
   - Bash
@@ -32,6 +32,7 @@ Output: {padded_phase}-REVIEW.md in phase directory + inline summary of findings
 
 <context>
 Phase: $ARGUMENTS (first positional argument is phase number)
+Project: optional second positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
 
 Optional flags parsed from $ARGUMENTS:
 - `--depth=VALUE` — Depth override (quick|standard|deep). If provided, overrides workflow.code_review_depth config.

@@ -37,14 +37,14 @@ Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`, `has_plans`, 
 
 Then load phase details and list plans/summaries:
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" roadmap get-phase "${phase_number}"
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" roadmap get-phase "${phase_number}"
 grep -E "^| ${phase_number}" .planning/REQUIREMENTS.md 2>/dev/null || true
 ls "$phase_dir"/*-SUMMARY.md "$phase_dir"/*-PLAN.md 2>/dev/null || true
 ```
 
 Load full milestone phases for deferred-item filtering (Step 9b):
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" roadmap analyze
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" roadmap analyze
 ```
 
 Extract **phase goal** from ROADMAP.md (the outcome to verify, not tasks), **requirements** from REQUIREMENTS.md if it exists, and **all milestone phases** from roadmap analyze (for cross-referencing gaps against later phases).
@@ -57,7 +57,7 @@ Use wsf-tools to extract must_haves from each PLAN:
 
 ```bash
 for plan in "$PHASE_DIR"/*-PLAN.md; do
-  MUST_HAVES=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" frontmatter get "$plan" --field must_haves)
+  MUST_HAVES=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" frontmatter get "$plan" --field must_haves)
   echo "=== $plan ===" && echo "$MUST_HAVES"
 done
 ```
@@ -71,7 +71,7 @@ Aggregate all must_haves across plans for phase-level verification.
 If no must_haves in frontmatter (MUST_HAVES returns error or empty), check for Success Criteria:
 
 ```bash
-PHASE_DATA=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" roadmap get-phase "${phase_number}" --raw)
+PHASE_DATA=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" roadmap get-phase "${phase_number}" --raw)
 ```
 
 Parse the `success_criteria` array from the JSON output. If non-empty:
@@ -107,7 +107,7 @@ Use wsf-tools for artifact verification against must_haves in each PLAN:
 
 ```bash
 for plan in "$PHASE_DIR"/*-PLAN.md; do
-  ARTIFACT_RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" verify artifacts "$plan")
+  ARTIFACT_RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" verify artifacts "$plan")
   echo "=== $plan ===" && echo "$ARTIFACT_RESULT"
 done
 ```
@@ -150,7 +150,7 @@ Use wsf-tools for key link verification against must_haves in each PLAN:
 
 ```bash
 for plan in "$PHASE_DIR"/*-PLAN.md; do
-  LINKS_RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" verify key-links "$plan")
+  LINKS_RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" verify key-links "$plan")
   echo "=== $plan ===" && echo "$LINKS_RESULT"
 done
 ```

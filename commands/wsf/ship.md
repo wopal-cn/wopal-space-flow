@@ -1,7 +1,7 @@
 ---
 name: wsf-ship
 description: Create PR, run review, and prepare for merge after verification passes
-argument-hint: "[phase number or milestone, e.g., '4' or 'v1.0']"
+argument-hint: "[phase number or milestone] [project]"
 allowed-tools:
   - Read
   - Bash
@@ -19,5 +19,10 @@ Closes the plan → execute → verify → ship loop.
 <execution_context>
 @~/.claude/wsf/workflows/ship.md
 </execution_context>
+
+<context>
+Phase or milestone: $ARGUMENTS (first positional argument, e.g., '4' or 'v1.0')
+Project: optional second positional argument (e.g., `space-flow`). If specified, resolve to `$PROJECT_ROOT=projects/<project>/` via `wsf-tools init`.
+</context>
 
 Execute the ship workflow from @~/.claude/wsf/workflows/ship.md end-to-end.

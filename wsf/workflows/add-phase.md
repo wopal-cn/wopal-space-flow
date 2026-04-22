@@ -10,28 +10,34 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <step name="parse_arguments">
 Parse the command arguments:
-- All arguments become the phase description
+- Arguments may include optional project name followed by phase description
 - Example: `/wsf-add-phase Add authentication` → description = "Add authentication"
+- Example: `/wsf-add-phase space-flow Add authentication` → project = "space-flow", description = "Add authentication"
 - Example: `/wsf-add-phase Fix critical performance issues` → description = "Fix critical performance issues"
 
 If no arguments provided:
 
 ```
 ERROR: Phase description required
-Usage: /wsf-add-phase <description>
+Usage: /wsf-add-phase <description> [project]
 Example: /wsf-add-phase Add authentication system
+Example: /wsf-add-phase Add authentication system space-flow
 ```
 
 Exit.
 </step>
 
 <step name="init_context">
-Load phase operation context:
+**Load project context from workspace root:**
 
 ```bash
-INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init phase-op "0")
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init add-phase $ARGUMENTS)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
+
+Extract from init JSON: `project_root`, `roadmap_exists`, `phase_description`.
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
 
 Check `roadmap_exists` from init JSON. If false:
 ```
@@ -45,7 +51,7 @@ Exit.
 **Delegate the phase addition to wsf-tools:**
 
 ```bash
-RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" phase add "${description}")
+RESULT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" phase add "${description}")
 ```
 
 The CLI handles:

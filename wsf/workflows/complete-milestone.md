@@ -37,12 +37,31 @@ When a milestone completes:
 
 <process>
 
+<step name="init_context">
+
+**Load project context from workspace root:**
+
+```bash
+INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init complete-milestone $ARGUMENTS)
+if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+```
+
+Extract from init JSON: `project_root`, `project_exists`, `roadmap_exists`.
+
+**Parse arguments:**
+- If `$ARGUMENTS` starts with a project name (e.g., `space-flow 1.0`), extract project → set `$PROJECT_ROOT=projects/<project>/`
+- Remaining argument → version number
+
+All subsequent file operations use `$PROJECT_ROOT/.planning/` instead of relative paths.
+
+</step>
+
 <step name="verify_readiness">
 
 **Use `roadmap analyze` for comprehensive readiness check:**
 
 ```bash
-ROADMAP=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" roadmap analyze)
+ROADMAP=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" roadmap analyze)
 ```
 
 This returns all phases with plan/summary counts and disk status. Use this to verify:
@@ -157,7 +176,7 @@ Extract one-liners from SUMMARY.md files using summary-extract:
 # For each phase in milestone, extract one-liner
 for summary in .planning/phases/*-*/*-SUMMARY.md; do
   [ -e "$summary" ] || continue
-  node "$HOME/.claude/wsf/bin/wsf-tools.cjs" summary-extract "$summary" --fields one_liner --pick one_liner
+  node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" summary-extract "$summary" --fields one_liner --pick one_liner
 done
 ```
 
@@ -370,7 +389,7 @@ Update `.planning/ROADMAP.md` — group completed milestone phases:
 **Delegate archival to wsf-tools:**
 
 ```bash
-ARCHIVE=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" milestone complete "v[X.Y]" --name "[Milestone Name]")
+ARCHIVE=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" milestone complete "v[X.Y]" --name "[Milestone Name]")
 ```
 
 The CLI handles:
@@ -450,7 +469,7 @@ Append the extracted Backlog content verbatim to the end of the newly written RO
 **Safety commit — commit archive files BEFORE deleting any originals:**
 
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "chore: archive v[X.Y] milestone files" --files .planning/milestones/v[X.Y]-ROADMAP.md .planning/milestones/v[X.Y]-REQUIREMENTS.md .planning/milestones/v[X.Y]-MILESTONE-AUDIT.md .planning/MILESTONES.md .planning/PROJECT.md .planning/STATE.md .planning/ROADMAP.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "chore: archive v[X.Y] milestone files" --files .planning/milestones/v[X.Y]-ROADMAP.md .planning/milestones/v[X.Y]-REQUIREMENTS.md .planning/milestones/v[X.Y]-MILESTONE-AUDIT.md .planning/MILESTONES.md .planning/PROJECT.md .planning/STATE.md .planning/ROADMAP.md
 ```
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
@@ -519,7 +538,7 @@ If the "## Cross-Milestone Trends" section exists, update the tables with new da
 
 **Commit:**
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
 ```
 
 </step>
@@ -561,7 +580,7 @@ Extract `branching_strategy`, `phase_branch_template`, `milestone_branch_templat
 
 Detect base branch:
 ```bash
-BASE_BRANCH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
+BASE_BRANCH=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" --cwd "${project_root}" config-get git.base_branch 2>/dev/null || echo "")
 if [ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ]; then
   BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')
   BASE_BRANCH="${BASE_BRANCH:-main}"

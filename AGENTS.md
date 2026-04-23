@@ -259,11 +259,23 @@ npm run test:coverage   # 测试 + 覆盖率（≥70% lines）
 - 运行器：`scripts/run-tests.cjs`（跨平台，自动发现测试文件）
 - 涉及项目根解析、多项目空间支持、`--cwd` 透传时，至少更新：`tests/core.test.cjs`、`tests/init.test.cjs`、`tests/dispatcher.test.cjs`
 
-### 本地测试安装
+### 本地安装
+
+安装脚本使用 `process.cwd()` 确定安装位置，必须从目标目录执行：
 
 ```bash
-node bin/install.js --claude --local    # 安装到 ./.claude/
+# 单项目仓库：在项目根目录执行
+cd /path/to/your-project
+node /path/to/space-flow/bin/install.js --opencode --local
+# → 安装到 ./.agents/ 和 ./.opencode/
+
+# WopalSpace 多项目空间：在空间根目录执行
+cd /path/to/wopal-workspace
+node projects/space-flow/bin/install.js --opencode --local
+# → 安装到空间根 .agents/ 和 .opencode/
 ```
+
+**禁止**在子项目目录（如 `projects/space-flow/`）内执行 `--local` 安装，会导致 WSF 被安装到错误位置。
 
 ### 新增命令模板
 

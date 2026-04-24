@@ -613,6 +613,8 @@ Planner prompt:
 ```markdown
 <planning_context>
 **Phase:** {phase_number}
+**Padded Phase:** {padded_phase}
+**Phase Directory:** {phase_dir}
 **Mode:** {standard | gap_closure | reviews}
 
 <files_to_read>
@@ -757,6 +759,8 @@ Checker prompt:
 ```markdown
 <verification_context>
 **Phase:** {phase_number}
+**Padded Phase:** {padded_phase}
+**Phase Directory:** {phase_dir}
 **Phase Goal:** {goal from ROADMAP}
 
 <files_to_read>
@@ -851,6 +855,8 @@ Revision prompt:
 ```markdown
 <revision_context>
 **Phase:** {phase_number}
+**Padded Phase:** {padded_phase}
+**Phase Directory:** {phase_dir}
 **Mode:** revision
 
 <files_to_read>

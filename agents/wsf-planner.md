@@ -524,7 +524,7 @@ Output: [Artifacts created]
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
+After completion, create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md`
 </output>
 ```
 
@@ -859,11 +859,11 @@ Output: [Working, tested feature]
 
 ## Red-Green-Refactor Cycle
 
-**RED:** Create test file → write test describing expected behavior → run test (MUST fail) → commit: `test({phase}-{plan}): add failing test for [feature]`
+**RED:** Create test file → write test describing expected behavior → run test (MUST fail) → commit: `test({padded_phase}-{plan}): add failing test for [feature]`
 
-**GREEN:** Write minimal code to pass → run test (MUST pass) → commit: `feat({phase}-{plan}): implement [feature]`
+**GREEN:** Write minimal code to pass → run test (MUST pass) → commit: `feat({padded_phase}-{plan}): implement [feature]`
 
-**REFACTOR (if needed):** Clean up → run tests (MUST pass) → commit: `refactor({phase}-{plan}): clean up [feature]`
+**REFACTOR (if needed):** Clean up → run tests (MUST pass) → commit: `refactor({padded_phase}-{plan}): clean up [feature]`
 
 Each TDD plan produces 2-3 atomic commits.
 
@@ -898,7 +898,7 @@ INIT=$(node "$HOME/.claude/wsf/bin/wsf-tools.cjs" init plan-phase "${PHASE}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Extract from init JSON: `planner_model`, `researcher_model`, `checker_model`, `commit_docs`, `research_enabled`, `phase_dir`, `phase_number`, `has_research`, `has_context`.
+Extract from init JSON: `planner_model`, `researcher_model`, `checker_model`, `commit_docs`, `research_enabled`, `phase_dir`, `phase_number`, `padded_phase`, `phase_slug`, `has_research`, `has_context`.
 
 Also read STATE.md for position, decisions, blockers:
 ```bash
@@ -1176,8 +1176,8 @@ Update ROADMAP.md to finalize phase placeholders:
 **Plan list** (always update):
 ```
 Plans:
-- [ ] {phase}-01-PLAN.md — {brief objective}
-- [ ] {phase}-02-PLAN.md — {brief objective}
+- [ ] {padded_phase}-01-PLAN.md — {brief objective}
+- [ ] {padded_phase}-02-PLAN.md — {brief objective}
 ```
 
 4. Write updated ROADMAP.md
@@ -1185,7 +1185,7 @@ Plans:
 
 <step name="git_commit">
 ```bash
-node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs($PHASE): create phase plan" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md .planning/ROADMAP.md
+node "$HOME/.claude/wsf/bin/wsf-tools.cjs" commit "docs($PADDED_PHASE): create phase plan" --files .planning/phases/$PADDED_PHASE-*/$PADDED_PHASE-*-PLAN.md .planning/ROADMAP.md
 ```
 </step>
 
@@ -1216,8 +1216,8 @@ Return structured planning outcome to orchestrator.
 
 | Plan | Objective | Tasks | Files |
 |------|-----------|-------|-------|
-| {phase}-01 | [brief] | 2 | [files] |
-| {phase}-02 | [brief] | 3 | [files] |
+| {padded_phase}-01 | [brief] | 2 | [files] |
+| {padded_phase}-02 | [brief] | 3 | [files] |
 
 ### Next Steps
 
@@ -1238,7 +1238,7 @@ Execute: `/wsf-execute-phase {phase}`
 
 | Plan | Gaps Addressed | Files |
 |------|----------------|-------|
-| {phase}-04 | [gap truths] | [files] |
+| {padded_phase}-04 | [gap truths] | [files] |
 
 ### Next Steps
 

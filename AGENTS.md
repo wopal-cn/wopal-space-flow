@@ -177,15 +177,16 @@ wsf-tools websearch <query> [--limit N]      # Brave API 搜索
 ### 4.1 安装器 (`bin/install.js`)
 
 - 入口：`npx wsf-cc` 或 `wsf-cc`
-- 参数：`--claude/--opencode/--gemini/--codex/--all` + `--global/--local`
+- 参数：`--claude/--opencode/--gemini/--codex/--wopal-space/--all` + `--global/--local`
 - 逻辑：检测 runtime → 复制 files 到目标目录 → 注入 hooks 配置 → 处理 uninstall
 - 目标目录映射：
   | Runtime | Global | Local |
   |---------|--------|-------|
   | Claude  | `~/.claude/` | `./.claude/` |
-  | OpenCode | `~/.config/opencode/` | `./.opencode/` |
+  | OpenCode | `~/.config/opencode/` | `./.agents/` |
   | Gemini | `~/.gemini/` | `./.gemini/` |
   | Codex | `~/.codex/` | `./.codex/` |
+  | Wopal Space | `~/.wopal/` | `./.wopal/` |
 
 ### 4.2 命令系统 (`commands/wsf/*.md`)
 
@@ -250,6 +251,17 @@ npm run build:hooks     # 构建 hooks（复制到 hooks/dist/）
 npm test                # 运行测试（Node.js test runner）
 npm run test:coverage   # 测试 + 覆盖率（≥70% lines）
 ```
+
+### Wopal Space Runtime
+
+`wopal-space` 是专为 WopalSpace 多项目工作空间设计的 runtime：
+
+- **安装目录**：local `./.wopal/`、global `~/.wopal/`
+- **单根目录模型**：skills、wsf、agents、manifest 全部在同一目录下
+- **不创建**：`.opencode/`、`.agents/`、`hooks/`、`settings.json`、`package.json`
+- **不自动配置** permissions — 需用户手动配置
+- **安装命令**：`node bin/install.js --wopal-space --local` 或 `--global`
+- **卸载命令**：`node bin/install.js --wopal-space --local --uninstall`
 
 ### 测试
 

@@ -162,10 +162,10 @@ describe('install.js source correctness', () => {
     );
   });
 
-  test('cache invalidation uses ~/.cache/wsf/ path', () => {
+  test('cache invalidation no longer uses ~/.cache/wsf/ path', () => {
     assert.ok(
-      src.includes('.cache') && src.includes('wsf'),
-      'Cache invalidation logic should still reference the WSF cache area'
+      !src.includes("'.cache', 'wsf', 'wsf-update-check.json'"),
+      'install.js should not clear wsf update cache'
     );
   });
 
@@ -260,10 +260,10 @@ describe('install.js source correctness', () => {
     );
   });
 
-  test('OpenCode local install writes manifest via .opencode compatibility dir', () => {
+  test('OpenCode local install writes manifest to .agents root', () => {
     assert.ok(
-      src.includes('writeManifest(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);'),
-      'OpenCode local install should keep manifest in .opencode compatibility dir'
+      src.includes('writeManifest(targetDir, runtime);'),
+      'OpenCode local install should write manifest to .agents root (targetDir)'
     );
   });
 });

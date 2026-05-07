@@ -70,6 +70,7 @@ const hasCursor = args.includes('--cursor');
 const hasWindsurf = args.includes('--windsurf');
 const hasAugment = args.includes('--augment');
 const hasTrae = args.includes('--trae');
+const hasWopalSpace = args.includes('--wopal-space');
 const hasBoth = args.includes('--both'); // Legacy flag, keeps working
 const hasAll = args.includes('--all');
 const hasUninstall = args.includes('--uninstall') || args.includes('-u');
@@ -77,7 +78,7 @@ const hasUninstall = args.includes('--uninstall') || args.includes('-u');
 // Runtime selection - can be set by flags or interactive prompt
 let selectedRuntimes = [];
 if (hasAll) {
-  selectedRuntimes = ['claude', 'kilo', 'opencode', 'gemini', 'codex', 'copilot', 'antigravity', 'cursor', 'windsurf', 'augment', 'trae'];
+  selectedRuntimes = ['claude', 'kilo', 'opencode', 'gemini', 'codex', 'copilot', 'antigravity', 'cursor', 'windsurf', 'augment', 'trae', 'wopal-space'];
 } else if (hasBoth) {
   selectedRuntimes = ['claude', 'opencode'];
 } else {
@@ -92,6 +93,7 @@ if (hasAll) {
   if (hasWindsurf) selectedRuntimes.push('windsurf');
   if (hasAugment) selectedRuntimes.push('augment');
   if (hasTrae) selectedRuntimes.push('trae');
+  if (hasWopalSpace) selectedRuntimes.push('wopal-space');
 }
 
 // WSL + Windows Node.js detection
@@ -140,11 +142,13 @@ function getDirName(runtime) {
   if (runtime === 'windsurf') return '.windsurf';
   if (runtime === 'augment') return '.augment';
   if (runtime === 'trae') return '.trae';
+  if (runtime === 'wopal-space') return '.wopal';
   return '.claude';
 }
 
 function getInstallRootDirName(runtime, isGlobal = false) {
   if (!isGlobal && runtime === 'opencode') return '.agents';
+  if (runtime === 'wopal-space') return '.wopal';
   return getDirName(runtime);
 }
 
@@ -159,13 +163,20 @@ function getManifestBaseDir(configDir, runtime = 'claude') {
   if (runtime === 'opencode' && path.basename(configDir) === '.opencode') {
     return path.join(path.dirname(configDir), '.agents');
   }
+  if (runtime === 'opencode' && path.basename(configDir) === '.agents') {
+    return configDir;
+  }
   return configDir;
 }
 
 function getRuntimePatchRoots(configDir, runtime = 'claude') {
   const roots = [configDir];
-  if (runtime === 'opencode' && path.basename(configDir) === '.opencode') {
-    roots.unshift(path.join(path.dirname(configDir), '.agents'));
+  if (runtime === 'opencode') {
+    if (path.basename(configDir) === '.opencode') {
+      roots.unshift(path.join(path.dirname(configDir), '.agents'));
+    } else if (path.basename(configDir) === '.agents') {
+      roots.unshift(configDir);
+    }
   }
   return [...new Set(roots)];
 }
@@ -225,6 +236,7 @@ function getConfigDirFromHome(runtime, isGlobal) {
   if (runtime === 'windsurf') return "'.windsurf'";
   if (runtime === 'augment') return "'.augment'";
   if (runtime === 'trae') return "'.trae'";
+  if (runtime === 'wopal-space') return "'.wopal'";
   return "'.claude'";
 }
 
@@ -387,6 +399,17 @@ function getGlobalDir(runtime, explicitDir = null) {
     return path.join(os.homedir(), '.trae');
   }
 
+  if (runtime === 'wopal-space') {
+    // Wopal Space: --config-dir > WOPAL_SPACE_CONFIG_DIR > ~/.wopal
+    if (explicitDir) {
+      return expandTilde(explicitDir);
+    }
+    if (process.env.WOPAL_SPACE_CONFIG_DIR) {
+      return expandTilde(process.env.WOPAL_SPACE_CONFIG_DIR);
+    }
+    return path.join(os.homedir(), '.wopal');
+  }
+
 
   // Claude Code: --config-dir > CLAUDE_CONFIG_DIR > ~/.claude
   if (explicitDir) {
@@ -408,7 +431,7 @@ const banner = '\n' +
   '\n' +
   '  Wopal Space Flow ' + dim + 'v' + pkg.version + reset + '\n' +
   '  A meta-prompting, context engineering and spec-driven\n' +
-  '  development system for Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Antigravity, Cursor, Windsurf, Augment and Trae by TÂCHES.\n';
+  '  development system for Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Antigravity, Cursor, Windsurf, Augment, Trae and Wopal Space by TÂCHES.\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {
@@ -446,7 +469,7 @@ if (hasUninstall) {
 
 // Show help if requested
 if (hasHelp) {
-  console.log(`  ${yellow}Usage:${reset} npx wsf-cc [options]\n\n  ${yellow}Options:${reset}\n    ${cyan}-g, --global${reset}              Install globally (to config directory)\n    ${cyan}-l, --local${reset}               Install locally (to current directory)\n    ${cyan}--claude${reset}                  Install for Claude Code only\n    ${cyan}--opencode${reset}                Install for OpenCode only\n    ${cyan}--gemini${reset}                  Install for Gemini only\n    ${cyan}--kilo${reset}                    Install for Kilo only\n    ${cyan}--codex${reset}                   Install for Codex only\n    ${cyan}--copilot${reset}                 Install for Copilot only\n    ${cyan}--antigravity${reset}             Install for Antigravity only\n    ${cyan}--cursor${reset}                  Install for Cursor only\n    ${cyan}--windsurf${reset}                Install for Windsurf only\n    ${cyan}--augment${reset}                 Install for Augment only\n    ${cyan}--trae${reset}                    Install for Trae only\n    ${cyan}--all${reset}                     Install for all runtimes\n    ${cyan}-u, --uninstall${reset}           Uninstall WSF (remove all WSF files)\n    ${cyan}-c, --config-dir <path>${reset}   Specify custom config directory\n    ${cyan}-h, --help${reset}                Show this help message\n    ${cyan}--force-statusline${reset}        Replace existing statusline config\n\n  ${yellow}Examples:${reset}\n    ${dim}# Interactive install (prompts for runtime and location)${reset}\n    npx wsf-cc\n\n    ${dim}# Install for Claude Code globally${reset}\n    npx wsf-cc --claude --global\n\n    ${dim}# Install for Gemini globally${reset}\n    npx wsf-cc --gemini --global\n\n    ${dim}# Install for Kilo globally${reset}\n    npx wsf-cc --kilo --global\n\n    ${dim}# Install for Codex globally${reset}\n    npx wsf-cc --codex --global\n\n    ${dim}# Install for Copilot globally${reset}\n    npx wsf-cc --copilot --global\n\n    ${dim}# Install for Copilot locally${reset}\n    npx wsf-cc --copilot --local\n\n    ${dim}# Install for Antigravity globally${reset}\n    npx wsf-cc --antigravity --global\n\n    ${dim}# Install for Antigravity locally${reset}\n    npx wsf-cc --antigravity --local\n\n    ${dim}# Install for Cursor globally${reset}\n    npx wsf-cc --cursor --global\n\n    ${dim}# Install for Cursor locally${reset}\n    npx wsf-cc --cursor --local\n\n    ${dim}# Install for Windsurf globally${reset}\n    npx wsf-cc --windsurf --global\n\n    ${dim}# Install for Windsurf locally${reset}\n    npx wsf-cc --windsurf --local\n\n    ${dim}# Install for Augment globally${reset}\n    npx wsf-cc --augment --global\n\n    ${dim}# Install for Augment locally${reset}\n    npx wsf-cc --augment --local\n\n    ${dim}# Install for Trae globally${reset}\n    npx wsf-cc --trae --global\n\n    ${dim}# Install for Trae locally${reset}\n    npx wsf-cc --trae --local\n\n    ${dim}# Install for all runtimes globally${reset}\n    npx wsf-cc --all --global\n\n    ${dim}# Install to custom config directory${reset}\n    npx wsf-cc --kilo --global --config-dir ~/.kilo-work\n\n    ${dim}# Install to current project only${reset}\n    npx wsf-cc --claude --local\n\n    ${dim}# Uninstall WSF from Cursor globally${reset}\n    npx wsf-cc --cursor --global --uninstall\n\n  ${yellow}Notes:${reset}\n    The --config-dir option is useful when you have multiple configurations.\n    It takes priority over CLAUDE_CONFIG_DIR / OPENCODE_CONFIG_DIR / GEMINI_CONFIG_DIR / KILO_CONFIG_DIR / CODEX_HOME / COPILOT_CONFIG_DIR / ANTIGRAVITY_CONFIG_DIR / CURSOR_CONFIG_DIR / WINDSURF_CONFIG_DIR / AUGMENT_CONFIG_DIR / TRAE_CONFIG_DIR environment variables.\n`);
+  console.log(`  ${yellow}Usage:${reset} npx wsf-cc [options]\n\n  ${yellow}Options:${reset}\n    ${cyan}-g, --global${reset}              Install globally (to config directory)\n    ${cyan}-l, --local${reset}               Install locally (to current directory)\n    ${cyan}--claude${reset}                  Install for Claude Code only\n    ${cyan}--opencode${reset}                Install for OpenCode only\n    ${cyan}--gemini${reset}                  Install for Gemini only\n    ${cyan}--kilo${reset}                    Install for Kilo only\n    ${cyan}--codex${reset}                   Install for Codex only\n    ${cyan}--copilot${reset}                 Install for Copilot only\n    ${cyan}--antigravity${reset}             Install for Antigravity only\n    ${cyan}--cursor${reset}                  Install for Cursor only\n    ${cyan}--windsurf${reset}                Install for Windsurf only\n    ${cyan}--augment${reset}                 Install for Augment only\n    ${cyan}--trae${reset}                    Install for Trae only\n    ${cyan}--wopal-space${reset}             Install for Wopal Space only\n    ${cyan}--all${reset}                     Install for all runtimes\n    ${cyan}-u, --uninstall${reset}           Uninstall WSF (remove all WSF files)\n    ${cyan}-c, --config-dir <path>${reset}   Specify custom config directory\n    ${cyan}-h, --help${reset}                Show this help message\n    ${cyan}--force-statusline${reset}        Replace existing statusline config\n\n  ${yellow}Examples:${reset}\n    ${dim}# Interactive install (prompts for runtime and location)${reset}\n    npx wsf-cc\n\n    ${dim}# Install for Claude Code globally${reset}\n    npx wsf-cc --claude --global\n\n    ${dim}# Install for Gemini globally${reset}\n    npx wsf-cc --gemini --global\n\n    ${dim}# Install for Kilo globally${reset}\n    npx wsf-cc --kilo --global\n\n    ${dim}# Install for Codex globally${reset}\n    npx wsf-cc --codex --global\n\n    ${dim}# Install for Copilot globally${reset}\n    npx wsf-cc --copilot --global\n\n    ${dim}# Install for Copilot locally${reset}\n    npx wsf-cc --copilot --local\n\n    ${dim}# Install for Antigravity globally${reset}\n    npx wsf-cc --antigravity --global\n\n    ${dim}# Install for Antigravity locally${reset}\n    npx wsf-cc --antigravity --local\n\n    ${dim}# Install for Cursor globally${reset}\n    npx wsf-cc --cursor --global\n\n    ${dim}# Install for Cursor locally${reset}\n    npx wsf-cc --cursor --local\n\n    ${dim}# Install for Windsurf globally${reset}\n    npx wsf-cc --windsurf --global\n\n    ${dim}# Install for Windsurf locally${reset}\n    npx wsf-cc --windsurf --local\n\n    ${dim}# Install for Augment globally${reset}\n    npx wsf-cc --augment --global\n\n    ${dim}# Install for Augment locally${reset}\n    npx wsf-cc --augment --local\n\n    ${dim}# Install for Trae globally${reset}\n    npx wsf-cc --trae --global\n\n    ${dim}# Install for Trae locally${reset}\n    npx wsf-cc --trae --local\n\n    ${dim}# Install for all runtimes globally${reset}\n    npx wsf-cc --all --global\n\n    ${dim}# Install to custom config directory${reset}\n    npx wsf-cc --kilo --global --config-dir ~/.kilo-work\n\n    ${dim}# Install to current project only${reset}\n    npx wsf-cc --claude --local\n\n    ${dim}# Uninstall WSF from Cursor globally${reset}\n    npx wsf-cc --cursor --global --uninstall\n\n  ${yellow}Notes:${reset}\n    The --config-dir option is useful when you have multiple configurations.\n    It takes priority over CLAUDE_CONFIG_DIR / OPENCODE_CONFIG_DIR / GEMINI_CONFIG_DIR / KILO_CONFIG_DIR / CODEX_HOME / COPILOT_CONFIG_DIR / ANTIGRAVITY_CONFIG_DIR / CURSOR_CONFIG_DIR / WINDSURF_CONFIG_DIR / AUGMENT_CONFIG_DIR / TRAE_CONFIG_DIR environment variables.\n`);
   process.exit(0);
 }
 
@@ -3909,6 +3932,8 @@ function copyCommandsAsOpencodeSkills(srcDir, skillsDir, prefix, pathPrefix, run
       content = content.replace(/\.\/\.claude\//g, runtime === 'opencode' ? './.agents/' : `./${getDirName(runtime)}/`);
       if (runtime === 'opencode') {
         content = content.replace(/\.\/\.opencode\//g, './.agents/');
+      } else if (runtime === 'wopal-space') {
+        content = content.replace(/\.\/\.opencode\//g, './.wopal/');
       }
       content = processAttribution(content, getCommitAttribution(runtime));
       content = convertClaudeCommandToOpencodeSkill(content, skillName);
@@ -3974,6 +3999,7 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
   const isWindsurf = runtime === 'windsurf';
   const isAugment = runtime === 'augment';
   const isTrae = runtime === 'trae';
+  const isWopalSpace = runtime === 'wopal-space';
   const dirName = getDirName(runtime);
 
   // Clean install: remove existing destination to prevent orphaned files
@@ -4001,6 +4027,8 @@ function copyWithPathReplacement(srcDir, destDir, pathPrefix, runtime, isCommand
         content = content.replace(localClaudeRegex, runtime === 'opencode' ? './.agents/' : `./${dirName}/`);
         if (isOpencode) {
           content = content.replace(/\.\/\.opencode\//g, './.agents/');
+        } else if (isWopalSpace) {
+          content = content.replace(/\.\/\.opencode\//g, './.wopal/');
         }
       }
       content = processAttribution(content, getCommitAttribution(runtime));
@@ -4252,6 +4280,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   const isWindsurf = runtime === 'windsurf';
   const isAugment = runtime === 'augment';
   const isTrae = runtime === 'trae';
+  const isWopalSpace = runtime === 'wopal-space';
   const dirName = getDirName(runtime);
 
   // Get the target directory based on runtime and install type
@@ -4282,6 +4311,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   if (runtime === 'windsurf') runtimeLabel = 'Windsurf';
   if (runtime === 'augment') runtimeLabel = 'Augment';
   if (runtime === 'trae') runtimeLabel = 'Trae';
+  if (runtime === 'wopal-space') runtimeLabel = 'Wopal Space';
 
   console.log(`  Uninstalling WSF from ${cyan}${runtimeLabel}${reset} at ${cyan}${locationLabel}${reset}\n`);
 
@@ -4427,6 +4457,14 @@ function uninstall(isGlobal, runtime = 'claude') {
         removedCount++;
         console.log(`  ${green}✓${reset} Removed ${skillCount} Antigravity skills`);
       }
+    }
+  } else if (isWopalSpace) {
+    // Wopal Space: remove skills/wsf-*/ directories (same layout as OpenCode skills)
+    const primarySkillsDir = path.join(targetDir, 'skills');
+    const skillCount = removeWsfSkillDirs(primarySkillsDir);
+    if (skillCount > 0) {
+      removedCount++;
+      console.log(`  ${green}✓${reset} Removed ${skillCount} Wopal Space skills`);
     }
   } else if (isGemini) {
     // Gemini: still uses commands/wsf/
@@ -4647,100 +4685,11 @@ function uninstall(isGlobal, runtime = 'claude') {
     }
   }
 
-  // 6. For OpenCode, clean up permissions from opencode.json or opencode.jsonc
-  if (isOpencode) {
-    const configPath = resolveOpencodeConfigPath(targetDir);
-    if (fs.existsSync(configPath)) {
-      try {
-        const config = parseJsonc(fs.readFileSync(configPath, 'utf8'));
-        let modified = false;
-
-        // Remove WSF permission entries
-        if (config.permission) {
-          for (const permType of ['read', 'external_directory']) {
-            if (config.permission[permType]) {
-              const keys = Object.keys(config.permission[permType]);
-              for (const key of keys) {
-                if (key.includes('wsf')) {
-                  delete config.permission[permType][key];
-                  modified = true;
-                }
-              }
-              // Clean up empty objects
-              if (Object.keys(config.permission[permType]).length === 0) {
-                delete config.permission[permType];
-              }
-            }
-          }
-          if (Object.keys(config.permission).length === 0) {
-            delete config.permission;
-          }
-        }
-
-        if (modified) {
-          fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-          removedCount++;
-          console.log(`  ${green}✓${reset} Removed WSF permissions from ${path.basename(configPath)}`);
-        }
-      } catch (e) {
-        // Ignore JSON parse errors
-      }
-    }
-  }
-
-  // 7. For Kilo, clean up permissions from kilo.json or kilo.jsonc
-  if (isKilo) {
-    const configPath = resolveKiloConfigPath(targetDir);
-    if (fs.existsSync(configPath)) {
-      try {
-        const config = parseJsonc(fs.readFileSync(configPath, 'utf8'));
-        let modified = false;
-
-        // Remove WSF permission entries
-        if (config.permission) {
-          for (const permType of ['read', 'external_directory']) {
-            if (config.permission[permType]) {
-              const keys = Object.keys(config.permission[permType]);
-              for (const key of keys) {
-                if (key.includes('wsf')) {
-                  delete config.permission[permType][key];
-                  modified = true;
-                }
-              }
-              // Clean up empty objects
-              if (Object.keys(config.permission[permType]).length === 0) {
-                delete config.permission[permType];
-              }
-            }
-          }
-          if (Object.keys(config.permission).length === 0) {
-            delete config.permission;
-          }
-        }
-
-        if (modified) {
-          fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-          removedCount++;
-          console.log(`  ${green}✓${reset} Removed WSF permissions from ${path.basename(configPath)}`);
-        }
-      } catch (e) {
-        // Ignore JSON parse errors
-      }
-    }
-  }
-
   // Remove the file manifest that the installer wrote at install time.
   // Without this step the metadata file persists after uninstall (#1908).
-  const manifestRoots = isOpencode && opencodeCompatDir ? [targetDir, opencodeCompatDir] : [targetDir];
-  let removedManifest = false;
-  for (const root of manifestRoots) {
-    const manifestPath = path.join(root, MANIFEST_NAME);
-    if (fs.existsSync(manifestPath)) {
-      fs.rmSync(manifestPath, { force: true });
-      removedManifest = true;
-    }
-  }
-  if (removedManifest) {
+  const manifestPath = path.join(targetDir, MANIFEST_NAME);
+  if (fs.existsSync(manifestPath)) {
+    fs.rmSync(manifestPath, { force: true });
     removedCount++;
     console.log(`  ${green}✓${reset} Removed ${MANIFEST_NAME}`);
   }
@@ -5111,7 +5060,7 @@ function writeManifest(configDir, runtime = 'claude') {
     }
   }
 
-  fs.writeFileSync(path.join(configDir, MANIFEST_NAME), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(manifestBaseDir, MANIFEST_NAME), JSON.stringify(manifest, null, 2));
   return manifest;
 }
 
@@ -5121,8 +5070,9 @@ function writeManifest(configDir, runtime = 'claude') {
  * Also saves pristine copies (from manifest) to wsf-pristine/ to enable
  * three-way merge during reapply-patches (pristine vs user vs new).
  */
-function saveLocalPatches(configDir) {
-  const manifestPath = path.join(configDir, MANIFEST_NAME);
+function saveLocalPatches(configDir, runtime = 'claude') {
+  const manifestBaseDir = getManifestBaseDir(configDir, runtime);
+  const manifestPath = path.join(manifestBaseDir, MANIFEST_NAME);
   if (!fs.existsSync(manifestPath)) return [];
 
   let manifest;
@@ -5131,7 +5081,7 @@ function saveLocalPatches(configDir) {
   const patchesDir = path.join(configDir, PATCHES_DIR_NAME);
   const pristineDir = path.join(configDir, 'wsf-pristine');
   const modified = [];
-  const patchRoots = getRuntimePatchRoots(configDir, path.basename(configDir) === '.opencode' ? 'opencode' : 'claude');
+  const patchRoots = getRuntimePatchRoots(configDir, runtime);
 
   for (const [relPath, originalHash] of Object.entries(manifest.files || {})) {
     const fullPath = patchRoots
@@ -5223,6 +5173,7 @@ function install(isGlobal, runtime = 'claude') {
   const isWindsurf = runtime === 'windsurf';
   const isAugment = runtime === 'augment';
   const isTrae = runtime === 'trae';
+  const isWopalSpace = runtime === 'wopal-space';
   const dirName = getDirName(runtime);
   const src = path.join(__dirname, '..');
 
@@ -5261,6 +5212,7 @@ function install(isGlobal, runtime = 'claude') {
   if (isWindsurf) runtimeLabel = 'Windsurf';
   if (isAugment) runtimeLabel = 'Augment';
   if (isTrae) runtimeLabel = 'Trae';
+  if (isWopalSpace) runtimeLabel = 'Wopal Space';
 
   console.log(`  Installing for ${cyan}${runtimeLabel}${reset} to ${cyan}${locationLabel}${reset}\n`);
 
@@ -5268,7 +5220,7 @@ function install(isGlobal, runtime = 'claude') {
   const failures = [];
 
   // Save any locally modified WSF files before they get wiped
-  saveLocalPatches(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir);
+  saveLocalPatches(targetDir, runtime);
 
   // Clean up orphaned files from previous versions
   cleanupOrphanedFiles(targetDir);
@@ -5417,6 +5369,22 @@ function install(isGlobal, runtime = 'claude') {
     } else {
       failures.push('skills/wsf-*');
     }
+  } else if (isWopalSpace) {
+    // Wopal Space: reuse OpenCode skill conversion, install to .wopal/skills/
+    const skillsDir = path.join(targetDir, 'skills');
+    const wsfSrc = path.join(src, 'commands', 'wsf');
+    copyCommandsAsOpencodeSkills(wsfSrc, skillsDir, 'wsf', pathPrefix, runtime);
+    if (fs.existsSync(skillsDir)) {
+      const count = fs.readdirSync(skillsDir, { withFileTypes: true })
+        .filter(e => e.isDirectory() && e.name.startsWith('wsf-')).length;
+      if (count > 0) {
+        console.log(`  ${green}✓${reset} Installed ${count} skills to skills/`);
+      } else {
+        failures.push('skills/wsf-*');
+      }
+    } else {
+      failures.push('skills/wsf-*');
+    }
   } else if (isGemini) {
     const commandsDir = path.join(targetDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });
@@ -5526,9 +5494,12 @@ function install(isGlobal, runtime = 'claude') {
           content = content.replace(homeDirRegex, pathPrefix);
           content = content.replace(bareDirRegex, normalizedPathPrefix);
           content = content.replace(bareHomeDirRegex, normalizedPathPrefix);
-          if (isOpencode) {
+if (isOpencode) {
             content = content.replace(/\.\/\.claude\//g, './.agents/');
             content = content.replace(/\.\/\.opencode\//g, './.agents/');
+          } else if (isWopalSpace) {
+            content = content.replace(/\.\/\.claude\//g, './.wopal/');
+            content = content.replace(/\.\/\.opencode\//g, './.wopal/');
           }
         }
         content = processAttribution(content, getCommitAttribution(runtime));
@@ -5553,6 +5524,8 @@ function install(isGlobal, runtime = 'claude') {
           content = convertClaudeAgentToAugmentAgent(content);
         } else if (isTrae) {
           content = convertClaudeAgentToTraeAgent(content);
+        } else if (isWopalSpace) {
+          content = convertClaudeToOpencodeFrontmatter(content, { isAgent: true });
         }
         const destName = isCopilot ? entry.name.replace('.md', '.agent.md') : entry.name;
         fs.writeFileSync(path.join(agentsDest, destName), content);
@@ -5586,7 +5559,7 @@ function install(isGlobal, runtime = 'claude') {
     failures.push('VERSION');
   }
 
-  if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae && !isOpencode) {
+  if (!isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae && !isOpencode && !isWopalSpace) {
     // Write package.json to force CommonJS mode for WSF scripts
     // Prevents "require is not defined" errors when project has "type": "module"
     // Node.js walks up looking for package.json - this stops inheritance from project
@@ -5645,11 +5618,11 @@ function install(isGlobal, runtime = 'claude') {
   }
 
   // Write file manifest for future modification detection
-  writeManifest(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);
+  writeManifest(targetDir, runtime);
   console.log(`  ${green}✓${reset} Wrote file manifest (${MANIFEST_NAME})`);
 
   // Report any backed-up local patches
-  reportLocalPatches(isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir, runtime);
+  reportLocalPatches(targetDir, runtime);
 
   // Verify no leaked .claude paths in non-Claude runtimes
   if (runtime !== 'claude') {
@@ -5668,6 +5641,8 @@ function install(isGlobal, runtime = 'claude') {
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
+          // Skip .INBOX directories (user backup/archive, not WSF install content)
+          if (entry.name === '.INBOX') continue;
           scanForLeakedPaths(fullPath);
         } else if ((entry.name.endsWith('.md') || entry.name.endsWith('.toml')) && entry.name !== 'CHANGELOG.md') {
           let content;
@@ -5679,9 +5654,12 @@ function install(isGlobal, runtime = 'claude') {
             }
             throw err;
           }
-          const matches = content.match(/(?:~|\$HOME)\/\.claude\b/g);
-          if (matches) {
-            leakedPaths.push({ file: fullPath.replace(targetDir + '/', ''), count: matches.length });
+          const claudeMatches = content.match(/(?:~|\$HOME)\/\.claude\b/g);
+          const opencodeMatches = runtime === 'wopal-space' ? content.match(/\.\/\.opencode\//g) : null;
+          if (claudeMatches || opencodeMatches) {
+            const claudeCount = claudeMatches ? claudeMatches.length : 0;
+            const opencodeCount = opencodeMatches ? opencodeMatches.length : 0;
+            leakedPaths.push({ file: fullPath.replace(targetDir + '/', ''), count: claudeCount + opencodeCount });
           }
         }
       }
@@ -5735,6 +5713,11 @@ function install(isGlobal, runtime = 'claude') {
   if (isTrae) {
     // Trae uses skills — no settings.json hooks needed
     return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: isOpencode && opencodeCompatDir ? opencodeCompatDir : targetDir };
+  }
+
+  if (isWopalSpace) {
+    // Wopal Space: skills-based, no settings.json, no hooks, no statusline
+    return { settingsPath: null, settings: null, statuslineCommand: null, runtime, configDir: targetDir };
   }
 
   // Configure statusline and hooks in settings.json
@@ -6001,8 +5984,9 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   const isCursor = runtime === 'cursor';
   const isWindsurf = runtime === 'windsurf';
   const isTrae = runtime === 'trae';
+  const isWopalSpace = runtime === 'wopal-space';
 
-  if (shouldInstallStatusline && !isOpencode && !isKilo && !isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae) {
+  if (shouldInstallStatusline && !isOpencode && !isKilo && !isCodex && !isCopilot && !isCursor && !isWindsurf && !isTrae && !isWopalSpace) {
     settings.statusLine = {
       type: 'command',
       command: statuslineCommand
@@ -6011,18 +5995,8 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   }
 
   // Write settings when runtime supports settings.json
-  if (!isOpencode && !isCodex && !isCopilot && !isKilo && !isCursor && !isWindsurf && !isTrae) {
+  if (!isOpencode && !isCodex && !isCopilot && !isKilo && !isCursor && !isWindsurf && !isTrae && !isWopalSpace) {
     writeSettings(settingsPath, settings);
-  }
-
-  // Configure OpenCode permissions
-  if (isOpencode) {
-    configureOpencodePermissions(isGlobal, configDir);
-  }
-
-  // Configure Kilo permissions
-  if (isKilo) {
-    configureKiloPermissions(isGlobal, configDir);
   }
 
   // For non-Claude runtimes, set resolve_model_ids: "omit" in ~/.wsf/defaults.json
@@ -6057,6 +6031,7 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   if (runtime === 'windsurf') program = 'Windsurf';
   if (runtime === 'augment') program = 'Augment';
   if (runtime === 'trae') program = 'Trae';
+  if (runtime === 'wopal-space') program = 'Wopal Space';
 
   let command = '/wsf-new-project';
   if (runtime === 'opencode') command = '/wsf-new-project';
@@ -6068,6 +6043,7 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   if (runtime === 'windsurf') command = '/wsf-new-project';
   if (runtime === 'augment') command = '/wsf-new-project';
   if (runtime === 'trae') command = '/wsf-new-project';
+  if (runtime === 'wopal-space') command = '/wsf-new-project';
   console.log(`
   ${green}Done!${reset} Open a blank directory in ${program} and run ${cyan}${command}${reset}.
 
@@ -6156,9 +6132,10 @@ function promptRuntime(callback) {
     '8': 'kilo',
     '9': 'opencode',
     '10': 'trae',
-    '11': 'windsurf'
+    '11': 'windsurf',
+    '12': 'wopal-space'
   };
-  const allRuntimes = ['claude', 'antigravity', 'augment', 'codex', 'copilot', 'cursor', 'gemini', 'kilo', 'opencode', 'trae', 'windsurf'];
+  const allRuntimes = ['claude', 'antigravity', 'augment', 'codex', 'copilot', 'cursor', 'gemini', 'kilo', 'opencode', 'trae', 'windsurf', 'wopal-space'];
 
   console.log(`  ${yellow}Which runtime(s) would you like to install for?${reset}\n\n  ${cyan}1${reset}) Claude Code  ${dim}(~/.claude)${reset}
   ${cyan}2${reset}) Antigravity  ${dim}(~/.gemini/antigravity)${reset}
@@ -6171,7 +6148,8 @@ function promptRuntime(callback) {
   ${cyan}9${reset}) OpenCode     ${dim}(~/.config/opencode)${reset}
   ${cyan}10${reset}) Trae         ${dim}(~/.trae)${reset}
   ${cyan}11${reset}) Windsurf     ${dim}(~/.codeium/windsurf)${reset}
-  ${cyan}12${reset}) All
+  ${cyan}12${reset}) Wopal Space  ${dim}(~/.wopal)${reset}
+  ${cyan}13${reset}) All
 
   ${dim}Select multiple: 1,2,6 or 1 2 6${reset}
 `);
@@ -6182,7 +6160,7 @@ function promptRuntime(callback) {
     const input = answer.trim() || '1';
 
     // "All" shortcut
-    if (input === '12') {
+    if (input === '13') {
       callback(allRuntimes);
       return;
     }

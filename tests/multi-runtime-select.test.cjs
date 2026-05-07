@@ -28,9 +28,10 @@ const runtimeMap = {
   '8': 'kilo',
   '9': 'opencode',
   '10': 'trae',
-  '11': 'windsurf'
+  '11': 'windsurf',
+  '12': 'wopal-space'
 };
-const allRuntimes = ['claude', 'antigravity', 'augment', 'codex', 'copilot', 'cursor', 'gemini', 'kilo', 'opencode', 'trae', 'windsurf'];
+const allRuntimes = ['claude', 'antigravity', 'augment', 'codex', 'copilot', 'cursor', 'gemini', 'kilo', 'opencode', 'trae', 'windsurf', 'wopal-space'];
 
 /**
  * Simulate the parsing logic from promptRuntime without requiring readline.
@@ -39,7 +40,7 @@ const allRuntimes = ['claude', 'antigravity', 'augment', 'codex', 'copilot', 'cu
 function parseRuntimeInput(input) {
   input = input.trim() || '1';
 
-  if (input === '12') {
+  if (input === '13') {
     return allRuntimes;
   }
 
@@ -93,8 +94,12 @@ describe('multi-runtime selection parsing', () => {
     assert.deepStrictEqual(parseRuntimeInput('11'), ['windsurf']);
   });
 
-  test('choice 12 returns all runtimes', () => {
-    assert.deepStrictEqual(parseRuntimeInput('12'), allRuntimes);
+  test('single choice for wopal-space', () => {
+    assert.deepStrictEqual(parseRuntimeInput('12'), ['wopal-space']);
+  });
+
+  test('choice 13 returns all runtimes', () => {
+    assert.deepStrictEqual(parseRuntimeInput('13'), allRuntimes);
   });
 
   test('empty input defaults to claude', () => {
@@ -103,7 +108,7 @@ describe('multi-runtime selection parsing', () => {
   });
 
   test('invalid choices are ignored, falls back to claude if all invalid', () => {
-    assert.deepStrictEqual(parseRuntimeInput('13'), ['claude']);
+    assert.deepStrictEqual(parseRuntimeInput('14'), ['claude']);
     assert.deepStrictEqual(parseRuntimeInput('0'), ['claude']);
     assert.deepStrictEqual(parseRuntimeInput('abc'), ['claude']);
   });
@@ -125,7 +130,7 @@ describe('multi-runtime selection parsing', () => {
 });
 
 describe('install.js source contains multi-select support', () => {
-  test('runtimeMap is defined with all 11 runtimes', () => {
+  test('runtimeMap is defined with all 12 runtimes', () => {
     for (const [key, name] of Object.entries(runtimeMap)) {
       assert.ok(
         installSrc.includes(`'${key}': '${name}'`),
@@ -142,21 +147,21 @@ describe('install.js source contains multi-select support', () => {
     }
   });
 
-  test('all shortcut uses option 12', () => {
+  test('all shortcut uses option 13', () => {
     assert.ok(
-      installSrc.includes("if (input === '12')"),
-      'all shortcut uses option 12'
+      installSrc.includes("if (input === '13')"),
+      'all shortcut uses option 13'
     );
   });
 
-  test('prompt lists Trae as option 10 and All as option 12', () => {
+  test('prompt lists Trae as option 10 and All as option 13', () => {
     assert.ok(
       installSrc.includes('10${reset}) Trae'),
       'prompt lists Trae as option 10'
     );
     assert.ok(
-      installSrc.includes('12${reset}) All'),
-      'prompt lists All as option 12'
+      installSrc.includes('13${reset}) All'),
+      'prompt lists All as option 13'
     );
   });
 

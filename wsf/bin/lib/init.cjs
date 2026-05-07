@@ -1445,18 +1445,18 @@ function cmdInitRemoveWorkspace(cwd, name, raw) {
 /**
  * Build a formatted agent skills block for injection into Task() prompts.
  *
- * Reads `config.agent_skills[agentType]` and validates each skill path exists
- * within the project root. Returns a formatted `<agent_skills>` block or empty
- * string if no skills are configured.
+ * Reads `config.agent_skills[agentType]` and resolves skill paths using:
+ * 1. Absolute paths: use directly
+ * 2. Relative paths: search project root first, then workspace root
+ * 
+ * Returns a formatted `<agent_skills>` block or empty string if no skills are configured.
  *
  * @param {object} config - Loaded project config
  * @param {string} agentType - The agent type (e.g., 'wsf-executor', 'wsf-planner')
- * @param {string} projectRoot - Absolute path to project root (for path validation)
+ * @param {string} projectRoot - Absolute path to project root
  * @returns {string} Formatted skills block or empty string
  */
 function buildAgentSkillsBlock(config, agentType, projectRoot) {
-  const { validatePath } = require('./security.cjs');
-
   if (!config || !config.agent_skills || !agentType) return '';
 
   let skillPaths = config.agent_skills[agentType];
@@ -1466,7 +1466,7 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
   if (typeof skillPaths === 'string') skillPaths = [skillPaths];
   if (!Array.isArray(skillPaths) || skillPaths.length === 0) return '';
 
-  // Detect workspace root for trusted external skill paths
+  // Detect workspace root (used for relative path fallback)
   // Workspace root is detected by presence of .wopal/ directory
   const detectWorkspaceRoot = (dir) => {
     let current = path.dirname(dir);
@@ -1481,69 +1481,55 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
   };
 
   const workspaceRoot = detectWorkspaceRoot(projectRoot);
-  const trustedSkillPrefixes = workspaceRoot ? [
-    path.join(workspaceRoot, '.wopal', 'skills'),
-    path.join(workspaceRoot, '.agents', 'skills'),
-  ] : [];
-
-  // Patterns for workspace-level skill paths (skip project root, load from workspace)
-  const workspaceSkillPatterns = [
-    /^\.wopal\/skills\//,
-    /^\.agents\/skills\//,
-  ];
 
   const validPaths = [];
   for (const skillPath of skillPaths) {
     if (typeof skillPath !== 'string') continue;
 
-    // Check if this is a workspace-level skill path
-    const isWorkspaceSkill = workspaceSkillPatterns.some(p => p.test(skillPath));
-
-    // Determine the base directory for this skill
-    let skillBaseDir;
-    if (isWorkspaceSkill && workspaceRoot) {
-      skillBaseDir = workspaceRoot;
-    } else {
-      skillBaseDir = projectRoot;
-    }
-
-    // Resolve and validate path
-    const resolvedPath = path.resolve(skillBaseDir, skillPath);
-    let realPath;
-    try {
-      realPath = fs.realpathSync(resolvedPath);
-    } catch {
-      realPath = resolvedPath;
-    }
-
-    // Security check: workspace skills must resolve to trusted prefixes
-    if (isWorkspaceSkill && workspaceRoot) {
-      const normalizedReal = realPath + path.sep;
-      const isTrusted = trustedSkillPrefixes.some(prefix => {
-        const normalizedPrefix = path.resolve(prefix) + path.sep;
-        return normalizedReal.startsWith(normalizedPrefix);
-      });
-      if (!isTrusted) {
-        process.stderr.write(`[agent-skills] WARNING: Skipping unsafe workspace path "${skillPath}": ${realPath} is not in trusted skill directories\n`);
-        continue;
-      }
-    } else {
-      // Non-workspace path: standard validation within project root
-      const pathCheck = validatePath(skillPath, projectRoot);
-      if (!pathCheck.safe) {
-        process.stderr.write(`[agent-skills] WARNING: Skipping unsafe path "${skillPath}": ${pathCheck.error}\n`);
-        continue;
-      }
-    }
-
-    // Check that SKILL.md exists (using the correct base directory)
-    const skillMdPath = path.join(skillBaseDir, skillPath, 'SKILL.md');
-    if (!fs.existsSync(skillMdPath)) {
-      process.stderr.write(`[agent-skills] WARNING: Skill not found at "${skillPath}/SKILL.md" — skipping\n`);
+    // Basic traversal check for relative paths
+    if (!path.isAbsolute(skillPath) && skillPath.includes('..')) {
+      process.stderr.write(`[agent-skills] WARNING: Skipping traversal path "${skillPath}"\n`);
       continue;
     }
 
-    validPaths.push(skillPath);
+    // Determine the actual skill directory
+    let skillDir;
+    let foundBase;
+
+    if (path.isAbsolute(skillPath)) {
+      // Absolute path: use directly
+      skillDir = skillPath;
+      foundBase = null; // No base directory for absolute paths
+    } else {
+      // Relative path: try project root first, then workspace root
+      const projectSkillDir = path.join(projectRoot, skillPath);
+      if (fs.existsSync(path.join(projectSkillDir, 'SKILL.md'))) {
+        skillDir = skillPath;
+        foundBase = projectRoot;
+      } else if (workspaceRoot) {
+        const workspaceSkillDir = path.join(workspaceRoot, skillPath);
+        if (fs.existsSync(path.join(workspaceSkillDir, 'SKILL.md'))) {
+          skillDir = skillPath;
+          foundBase = workspaceRoot;
+        }
+      }
+    }
+
+    // For absolute paths, check SKILL.md existence directly
+    if (path.isAbsolute(skillPath)) {
+      if (!fs.existsSync(path.join(skillDir, 'SKILL.md'))) {
+        process.stderr.write(`[agent-skills] WARNING: Skill not found at "${skillPath}/SKILL.md" — skipping\n`);
+        continue;
+      }
+      validPaths.push(skillPath);
+    } else if (foundBase) {
+      // Relative path found in project or workspace
+      validPaths.push(skillPath);
+    } else {
+      // Relative path not found anywhere
+      process.stderr.write(`[agent-skills] WARNING: Skill not found at "${skillPath}/SKILL.md" — skipping\n`);
+      continue;
+    }
   }
 
   if (validPaths.length === 0) return '';

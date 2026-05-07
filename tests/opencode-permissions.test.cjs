@@ -60,7 +60,7 @@ describe('configureOpencodePermissions', () => {
     assert.strictEqual(fs.readFileSync(configPath, 'utf8'), original);
   });
 
-  test('adds path-specific read and external_directory permissions for object configs', () => {
+  test('configureOpencodePermissions still works when called directly', () => {
     const configPath = path.join(configDir, 'opencode.json');
     fs.writeFileSync(configPath, JSON.stringify({ permission: {} }, null, 2) + '\n');
     process.env.OPENCODE_CONFIG_DIR = configDir;
@@ -74,10 +74,10 @@ describe('configureOpencodePermissions', () => {
     assert.strictEqual(config.permission.external_directory[wsfPath], 'allow');
   });
 
-  test('finishInstall passes the actual config dir to OpenCode permissions', () => {
+  test('finishInstall no longer calls configureOpencodePermissions', () => {
     assert.ok(
-      installSrc.includes('configureOpencodePermissions(isGlobal, configDir);'),
-      'OpenCode permission config uses actual install dir'
+      !installSrc.includes('configureOpencodePermissions(isGlobal, configDir);'),
+      'OpenCode permission config should NOT be auto-configured'
     );
   });
 
@@ -87,11 +87,10 @@ describe('configureOpencodePermissions', () => {
     install(false, 'opencode');
 
     const installRoot = path.join(configDir, '.agents');
-    const compatRoot = path.join(configDir, '.opencode');
     assert.ok(fs.existsSync(path.join(installRoot, 'skills')), 'OpenCode install should create .agents/skills/');
     assert.ok(!fs.existsSync(path.join(installRoot, 'hooks')), 'OpenCode install must not create hooks/');
     assert.ok(!fs.existsSync(path.join(installRoot, 'package.json')), 'OpenCode install must not create package.json');
-    assert.ok(fs.existsSync(path.join(compatRoot, 'wsf-file-manifest.json')), 'OpenCode install should still write manifest to .opencode/');
+    assert.ok(fs.existsSync(path.join(installRoot, 'wsf-file-manifest.json')), 'OpenCode install should write manifest to .agents/');
   });
 
   test('local install removes stale WSF hooks but preserves user hook files', () => {
@@ -132,13 +131,11 @@ describe('configureOpencodePermissions', () => {
     );
   });
 
-  test('writeManifest tracks OpenCode skills from .agents via .opencode manifest', () => {
-    const compatDir = path.join(configDir, '.opencode');
-    const targetDir = path.join(configDir, '.agents');
-    const skillDir = path.join(targetDir, 'skills', 'wsf-test');
-    const wsfDir = path.join(targetDir, 'wsf');
-    const agentsDir = path.join(targetDir, 'agents');
-    fs.mkdirSync(compatDir, { recursive: true });
+  test('writeManifest writes opencode local manifest to .agents', () => {
+    const installDir = path.join(configDir, '.agents');
+    const skillDir = path.join(installDir, 'skills', 'wsf-test');
+    const wsfDir = path.join(installDir, 'wsf');
+    const agentsDir = path.join(installDir, 'agents');
     fs.mkdirSync(skillDir, { recursive: true });
     fs.mkdirSync(wsfDir, { recursive: true });
     fs.mkdirSync(agentsDir, { recursive: true });
@@ -147,10 +144,10 @@ describe('configureOpencodePermissions', () => {
     fs.writeFileSync(path.join(wsfDir, 'VERSION'), '1.34.2\n');
     fs.writeFileSync(path.join(agentsDir, 'wsf-test.md'), '---\nname: wsf-test\n---\n');
 
-    writeManifest(compatDir, 'opencode');
+    writeManifest(installDir, 'opencode');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(compatDir, 'wsf-file-manifest.json'), 'utf8')
+      fs.readFileSync(path.join(installDir, 'wsf-file-manifest.json'), 'utf8')
     );
 
     assert.ok(

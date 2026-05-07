@@ -4,7 +4,7 @@
 
 **English** · [简体中文](README.zh-CN.md) 
 
-**A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, and Cline.**
+**A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, Cline, and Wopal Space.**
 
 **Solves context rot — the quality degradation that happens as Claude fills its context window.**
 
@@ -106,7 +106,7 @@ npx wsf-cc@latest
 ```
 
 The installer prompts you to choose:
-1. **Runtime** — Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, Cline, or all (interactive multi-select — pick multiple runtimes in a single install session)
+1. **Runtime** — Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Cursor, Windsurf, Antigravity, Augment, Trae, Cline, Wopal Space, or all (interactive multi-select — pick multiple runtimes in a single install session)
 2. **Location** — Global (all projects) or local (current project only)
 
 Verify with:
@@ -179,12 +179,16 @@ npx wsf-cc --trae --local         # Install to ./.trae/
 npx wsf-cc --cline --global       # Install to ~/.cline/
 npx wsf-cc --cline --local        # Install to ./.clinerules
 
+# Wopal Space
+npx wsf-cc --wopal-space --global # Install to ~/.wopal/
+npx wsf-cc --wopal-space --local  # Install to ./.wopal/
+
 # All runtimes
 npx wsf-cc --all --global      # Install to all directories
 ```
 
 Use `--global` (`-g`) or `--local` (`-l`) to skip the location prompt.
-Use `--claude`, `--opencode`, `--gemini`, `--kilo`, `--codex`, `--copilot`, `--cursor`, `--windsurf`, `--antigravity`, `--augment`, `--trae`, `--cline`, or `--all` to skip the runtime prompt.
+Use `--claude`, `--opencode`, `--gemini`, `--kilo`, `--codex`, `--copilot`, `--cursor`, `--windsurf`, `--antigravity`, `--augment`, `--trae`, `--cline`, `--wopal-space`, or `--all` to skip the runtime prompt.
 Use `--sdk` to also install the WSF SDK CLI (`wsf-sdk`) for headless autonomous execution.
 
 </details>
@@ -846,6 +850,7 @@ npx wsf-cc --antigravity --global --uninstall
 npx wsf-cc --augment --global --uninstall
 npx wsf-cc --trae --global --uninstall
 npx wsf-cc --cline --global --uninstall
+npx wsf-cc --wopal-space --global --uninstall
 
 # Local installs (current project)
 npx wsf-cc --claude --local --uninstall
@@ -860,6 +865,7 @@ npx wsf-cc --antigravity --local --uninstall
 npx wsf-cc --augment --local --uninstall
 npx wsf-cc --trae --local --uninstall
 npx wsf-cc --cline --local --uninstall
+npx wsf-cc --wopal-space --local --uninstall
 ```
 
 This removes all WSF commands, agents, hooks, and settings while preserving your other configurations.

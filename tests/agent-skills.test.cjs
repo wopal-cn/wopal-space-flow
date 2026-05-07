@@ -123,14 +123,14 @@ describe('agent-skills command', () => {
     });
 
     const result = runWsfTools(['agent-skills', 'wsf-executor'], tmpDir, { HOME: tmpDir, USERPROFILE: tmpDir });
-    // Should not crash — returns empty output (the missing skill is skipped)
     assert.ok(result.success, 'Command should succeed even with missing skill paths');
-    // Should not include the missing skill in the output
     assert.ok(!result.output.includes('skills/nonexistent/SKILL.md'),
       'Should not include nonexistent skill in output');
+    // Warning goes to stderr; helpers.cjs only captures stderr on error
+    // Success case returns { success: true, output: stdout }, no error field
   });
 
-  test('validates path safety — rejects traversal attempts', () => {
+  test('rejects traversal attempts with warning', () => {
     writeConfig(tmpDir, {
       agent_skills: {
         'wsf-executor': ['../../../etc/passwd'],
@@ -138,8 +138,90 @@ describe('agent-skills command', () => {
     });
 
     const result = runWsfTools(['agent-skills', 'wsf-executor'], tmpDir, { HOME: tmpDir, USERPROFILE: tmpDir });
-    // Should not include traversal path in output
+    assert.ok(result.success, 'Command should succeed but skip traversal path');
     assert.ok(!result.output.includes('/etc/passwd'), 'Should not include traversal path');
+    // Warning goes to stderr; helpers.cjs only captures stderr on error
+  });
+
+  test('resolves .wopal/skills/ path from workspace root', () => {
+    // Create workspace structure: tmpDir as workspace root with .wopal/
+    const wopalDir = path.join(tmpDir, '.wopal', 'skills', 'dev-flow');
+    fs.mkdirSync(wopalDir, { recursive: true });
+    fs.writeFileSync(path.join(wopalDir, 'SKILL.md'), '# Dev Flow Skill\n');
+
+    // Create a project subdirectory with .planning/
+    const projectDir = path.join(tmpDir, 'projects', 'test-project');
+    fs.mkdirSync(path.join(projectDir, '.planning'), { recursive: true });
+    
+    writeConfig(projectDir, {
+      agent_skills: {
+        'wsf-executor': ['.wopal/skills/dev-flow'],
+      },
+    });
+
+    const result = runWsfTools(['agent-skills', 'wsf-executor'], projectDir, { HOME: tmpDir, USERPROFILE: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.ok(result.output.includes('.wopal/skills/dev-flow/SKILL.md'), 'Should resolve workspace skill path');
+  });
+
+  test('resolves relative path from project root first', () => {
+    // Create skill in project directory
+    const projectSkillDir = path.join(tmpDir, 'skills', 'project-skill');
+    fs.mkdirSync(projectSkillDir, { recursive: true });
+    fs.writeFileSync(path.join(projectSkillDir, 'SKILL.md'), '# Project Skill\n');
+
+    // Also create same path in workspace root (should NOT be used)
+    const workspaceSkillDir = path.join(tmpDir, '.wopal', 'skills', 'project-skill');
+    fs.mkdirSync(workspaceSkillDir, { recursive: true });
+    fs.writeFileSync(path.join(workspaceSkillDir, 'SKILL.md'), '# Workspace Skill (should not be used)\n');
+
+    writeConfig(tmpDir, {
+      agent_skills: {
+        'wsf-executor': ['skills/project-skill'],
+      },
+    });
+
+    const result = runWsfTools(['agent-skills', 'wsf-executor'], tmpDir, { HOME: tmpDir, USERPROFILE: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    // Should find project-level skill first, not workspace fallback
+    assert.ok(result.output.includes('skills/project-skill/SKILL.md'), 'Should resolve project skill');
+  });
+
+  test('falls back to workspace root when skill not found in project', () => {
+    // Create workspace structure
+    const wopalDir = path.join(tmpDir, '.wopal', 'skills', 'workspace-only-skill');
+    fs.mkdirSync(wopalDir, { recursive: true });
+    fs.writeFileSync(path.join(wopalDir, 'SKILL.md'), '# Workspace Only Skill\n');
+
+    // Create project subdirectory (no skill here)
+    const projectDir = path.join(tmpDir, 'projects', 'test-project');
+    fs.mkdirSync(path.join(projectDir, '.planning'), { recursive: true });
+
+    writeConfig(projectDir, {
+      agent_skills: {
+        'wsf-executor': ['.wopal/skills/workspace-only-skill'],
+      },
+    });
+
+    const result = runWsfTools(['agent-skills', 'wsf-executor'], projectDir, { HOME: tmpDir, USERPROFILE: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.ok(result.output.includes('.wopal/skills/workspace-only-skill/SKILL.md'), 'Should fallback to workspace');
+  });
+
+  test('handles absolute path directly', () => {
+    const absSkillDir = path.join(tmpDir, 'absolute-skill');
+    fs.mkdirSync(absSkillDir, { recursive: true });
+    fs.writeFileSync(path.join(absSkillDir, 'SKILL.md'), '# Absolute Skill\n');
+
+    writeConfig(tmpDir, {
+      agent_skills: {
+        'wsf-executor': [absSkillDir],
+      },
+    });
+
+    const result = runWsfTools(['agent-skills', 'wsf-executor'], tmpDir, { HOME: tmpDir, USERPROFILE: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    assert.ok(result.output.includes(`${absSkillDir}/SKILL.md`), 'Should use absolute path directly');
   });
 
   test('returns empty when no agent type argument provided', () => {

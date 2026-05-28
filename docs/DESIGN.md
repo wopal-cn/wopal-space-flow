@@ -148,9 +148,9 @@ Space Flow 原始设计假设 runtime 可阻塞式拉起 subagent。过渡期目
 | 状态 | 位置 | 说明 |
 |------|------|------|
 | 产品源码 | `projects/space-flow/` | Space Flow 项目仓库 |
-| 产品文档 | `docs/projects/space-flow/` | DESIGN / plans |
+| 产品文档 | `projects/space-flow/docs` | DESIGN / plans |
 | 项目现场状态 | `<target-project>/.planning/` | 目标项目执行状态 |
-| 研究文档 | `docs/research/spec-flow/` | GSD / WSF 研究资料 |
+| 研究文档 | `projects/spec-flow/docs/research` | GSD / WSF 研究资料 |
 
 长期记忆由 `memory_manage` 承载，`.planning/` 不重复建设。
 

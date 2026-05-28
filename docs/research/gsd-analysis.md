@@ -379,7 +379,7 @@ Claude's Discretion  → Claude 自行判断（用户说"你决定"的）
 ├──────────────────┼────────────────────────┼────────────────────────┤
 │ 定位             │ 项目级开发工作流        │ 空间级操作系统          │
 │ 用户             │ 独立开发者              │ 超级个体               │
-│ 状态管理         │ .planning/ 目录        │ docs/projects/plans/   │
+│ 状态管理         │ .planning/ 目录        │ projects<project>/docs/plans/   │
 │                  │                        │ + MEMORY.md            │
 │ Agent 架构       │ 11 个专用 agent        │ Wopal + Fae 双层       │
 │ 并行执行         │ Wave-based 并行        │ 单任务顺序             │

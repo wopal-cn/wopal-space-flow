@@ -1,366 +1,66 @@
-# wsf — 项目规范
-
-WSF 项目是 GSD(get-shit-done 源码: labs/research/get-shit-done) 项目的 fork, 为本空间定义另一套开发工作流 (与 dev-flow 并行, 互不干扰)
-
-> **定位**：Claude Code / OpenCode / Gemini CLI / Codex 的 meta-prompting 与 spec-driven development 系统
-
+---
+name: Space Flow AGENT RULES
+description: WSF — meta-prompting and spec-driven development system for AI coding tools
 ---
 
-## 1. 架构概览
+# Agent Development Rules
 
-WSF 通过安装器将命令、Agent、模板、工作流和 hooks 部署到目标 AI coding 工具的目录中。
+## 1. Canonical References
 
-### 核心组件关系
+- PRD: `docs/products/wopal-space/PRD-wopalspace.md`
+- DESIGN: `projects/space-flow/docs/DESIGN.md`
+- Business Rules: `projects/space-flow/docs/BUSINESS_RULES.md`
 
-```
-bin/install.js
-  │
-  ├── 检测 runtime (claude/opencode/gemini/codex)
-  ├── 复制 assets 到目标目录:
-  │   ├── commands/wsf/*.md   → 命令定义 (frontmatter + process)
-  │   ├── agents/*.md         → Agent 定义 (subagent 角色)
-  │   ├── wsf/      → 工作流引擎
-  │   │   ├── workflows/*.md  → 工作流逻辑
-  │   │   ├── templates/*.md  → 文档模板
-  │   │   ├── references/*.md → 引用资料
-  │   │   └── bin/wsf-tools.cjs → CLI 工具集
-  │   └── hooks/              → Claude Code hooks (esbuild 打包)
-  │
-  └── 用户在项目中运行 /wsf-xxx 命令
-        │
-        ├── 触发 command/*.md 中的 process
-        ├── 加载 workflow/*.md 执行逻辑
-        ├── 调用 wsf-tools.cjs 处理状态/配置/git
-        └── 生成 .planning/ 目录 (PROJECT/ROADMAP/STATE 等)
-```
+## 2. Architecture and Directories
 
-> 详细的安装流程和多 runtime 适配逻辑见 `bin/install.js`（2482 行）。
+WSF deploys commands, agents, workflows, and hooks into target AI coding tool directories via the installer. Runtime chain: `/wsf-xxx` command → workflow orchestration → spawn sub-agent → `wsf-tools.cjs` handles state/config/git → `.planning/` persistence.
 
----
+| Directory | Responsibility |
+|---|---|
+| `bin/install.js` | Multi-runtime installer: runtime detection, file copy, config injection |
+| `commands/wsf/` | User entry commands (30+), YAML frontmatter + process definitions |
+| `wsf/workflows/` | Orchestration logic, thin orchestrator pattern: load context → spawn agent → collect results |
+| `agents/` | 24 specialized agent definitions, categorized as Research / Plan / Execute / Verify / Support |
+| `wsf/bin/` | CLI toolkit: `wsf-tools.cjs` + 19 lib modules (state, config, phase, roadmap, etc.) |
+| `wsf/templates/` | Document templates (PROJECT, ROADMAP, PLAN, SUMMARY, etc.) |
+| `wsf/references/` | Shared knowledge docs (35+), consumed by workflows and agents via `@-reference` |
+| `hooks/` | Runtime hooks: statusline, context monitor, prompt guard, etc. |
+| `tests/` | Node.js built-in test runner files |
 
-## 2. 目录与模块
+## 3. Development Commands
 
-```
-/
-├── bin/
-│   └── install.js               # 安装器入口（npx 触发），处理 runtime 检测、文件复制、配置注入
-├── commands/wsf/                # 命令定义文件（frontmatter YAML + process XML）
-│   ├── new-project.md           # 核心：项目初始化
-│   ├── discuss-phase.md         # 核心：阶段讨论
-│   ├── plan-phase.md            # 核心：阶段规划
-│   ├── execute-phase.md         # 核心：阶段执行（多 agent 并行）
-│   ├── verify-work.md           # 核心：用户验收测试
-│   ├── complete-milestone.md    # 里程碑完成
-│   └── ... (30+ commands)
-├── agents/                      # Subagent 角色定义
-│   ├── wsf-executor.md          # 执行器：原子提交 + 偏差处理
-│   ├── wsf-planner.md           # 规划器：XML 结构化计划
-│   ├── wsf-phase-researcher.md  # 阶段研究
-│   ├── wsf-project-researcher.md # 项目研究
-│   ├── wsf-verifier.md          # 验证器
-│   ├── wsf-debugger.md          # 调试器
-│   └── ... (11 agents)
-├── wsf/               # 工作流引擎核心
-│   ├── bin/
-│   │   ├── wsf-tools.cjs        # CLI 工具集（状态管理、配置、git 操作等）
-│   │   └── lib/                 # wsf-tools 的模块化实现
-│   │       ├── core.cjs         # 共享工具：路径、模型配置表、输出、配置加载
-│   │       ├── config.cjs       # 配置 CRUD
-│   │       ├── init.cjs         # 工作流初始化（execute-phase、new-project 等）
-│   │       ├── state.cjs        # STATE.md 操作
-│   │       ├── phase.cjs        # 阶段管理
-│   │       ├── roadmap.cjs      # 路线图解析
-│   │       ├── milestone.cjs    # 里程碑管理
-│   │       ├── verify.cjs       # 验证逻辑
-│   │       ├── template.cjs     # 模板处理
-│   │       ├── frontmatter.cjs  # YAML frontmatter CRUD
-│   │       └── commands.cjs     # 命令注册/分发
-│   ├── workflows/               # 工作流逻辑（命令执行时加载）
-│   │   ├── new-project.md       # 项目初始化流程
-│   │   ├── execute-phase.md     # 阶段执行（wave 并行）
-│   │   ├── plan-phase.md        # 规划流程
-│   │   └── ... (30+ workflows)
-│   ├── templates/               # 文档模板（PROJECT.md、ROADMAP.md 等）
-│   └── references/              # 引用资料（配置模式、git 集成等）
-├── hooks/                       # Claude Code hooks
-│   ├── wsf-context-monitor.js   # 上下文监控
-│   └── wsf-statusline.js        # 状态栏显示
-├── scripts/
-│   ├── build-hooks.js           # hooks 构建（复制到 dist/）
-│   └── run-tests.cjs            # 跨平台测试运行器
-├── tests/                       # 测试文件（Node.js test runner）
-│   ├── core.test.cjs
-│   ├── config.test.cjs
-│   ├── phase.test.cjs
-│   └── ... (16 test files)
-└── docs/
-    ├── USER-GUIDE.md            # 用户指南
-    └── context-monitor.md       # 上下文监控文档
-```
+| Scenario | Command | When |
+|---|---|---|
+| Build hooks | `npm run build:hooks` | After hook source changes |
+| Run tests | `npm test` | After any code change |
+| Test + coverage | `npm run test:coverage` | Before PR |
 
----
-
-## 3. CLI 工具速查
-
-`wsf-tools.cjs` 是核心 CLI，通过 `node wsf-tools.cjs <command>` 调用。
-
-### 状态管理
+Install verification (run from workspace root):
 
 ```bash
-wsf-tools state load                         # 加载配置 + 状态
-wsf-tools state json                         # STATE.md frontmatter → JSON
-wsf-tools state update <field> <value>       # 更新字段
-wsf-tools state get [section]                # 获取内容/章节
-wsf-tools state patch --field val ...        # 批量更新
-wsf-tools state-snapshot                     # 结构化解析 STATE.md
+node projects/space-flow/bin/install.js --wopal-space --local
+# Uninstall: add --uninstall
 ```
 
-### 模型与阶段
+Do NOT run `--local` install from within a sub-project directory.
 
-```bash
-wsf-tools resolve-model <agent-type>         # 根据 profile 解析模型
-wsf-tools find-phase <phase>                 # 按编号查找阶段目录
-wsf-tools phase next-decimal <phase>         # 计算下一个小数阶段号
-wsf-tools phase add <description>            # 追加阶段
-wsf-tools phase insert <after> <description> # 插入阶段
-wsf-tools phase remove <phase> [--force]     # 删除阶段并重新编号
-wsf-tools phase complete <phase>             # 标记阶段完成
-```
+## 4. Implementation Rules
 
-### Git 与提交
+- Core code is plain Node.js CommonJS (`.cjs`), no TypeScript, no bundler. Exception: hooks use esbuild; `prepublishOnly` auto-triggers `build:hooks`.
+- Installer is pure JS with zero external dependencies. Tests are single-file with no test framework dependencies.
+- Multi-runtime support: the installer handles command/agent format conversion, path mapping, and hook adaptation at install time. Workflows and agents are authored in Claude Code's native format; the installer performs the transform.
+- WopalSpace multi-project workspace: key entry commands accept a project parameter (e.g. `/wsf-new-project space-flow`), resolved to `projects/<name>/`. Path resolution is the responsibility of `wsf-tools.cjs` init layer; workflows must not guess the project root.
+- WopalSpace runtime: single-root directory model (`skills/`, `wsf/`, `agents/` coexist under one directory). Do not create `.opencode/`, `settings.json`, or `package.json`.
+- `--lang <code>` parameter: all document-generating commands/workflows/agents must support it. Decision chain: parameter → context inference (USER.md) → default English. Technical terms, file paths, and commands stay in English.
+- Security: never commit `.env`, API keys, or user configs. Never modify upstream command/agent core logic without explicit reason.
+- When changing project root resolution, multi-project space support, or `--cwd` passthrough, at minimum update `tests/core.test.cjs`, `tests/init.test.cjs`, `tests/dispatcher.test.cjs`.
 
-```bash
-wsf-tools commit <message> [--files f1 f2]   # 提交计划文档
-```
+## 5. Testing
 
-### 验证
+- Follow TDD: write a failing test first, then implement code to make it pass.
+- Framework: Node.js built-in test runner (`--test`), file naming `tests/*.test.cjs`.
+- Coverage: c8, 70% lines threshold, covering `wsf/bin/lib/*.cjs`.
+- Cross-platform runner: `scripts/run-tests.cjs`.
 
-```bash
-wsf-tools verify-summary <path>              # 验证 SUMMARY.md
-wsf-tools verify-path-exists <path>          # 检查文件/目录存在
-wsf-tools validate consistency               # 检查阶段编号一致性
-wsf-tools validate health [--repair]         # .planning/ 完整性检查
-```
+## 6. User-Supplied Rules
 
-### 路线图与需求
-
-```bash
-wsf-tools roadmap get-phase <phase>          # 提取阶段章节
-wsf-tools roadmap analyze                    # 完整路线图解析
-wsf-tools requirements mark-complete <ids>   # 标记需求完成
-```
-
-### Frontmatter
-
-```bash
-wsf-tools frontmatter get <file> [--field k] # 提取 frontmatter
-wsf-tools frontmatter set <file> --field k --value v
-wsf-tools frontmatter merge <file> --data '{json}'
-wsf-tools frontmatter validate <file> --schema plan|summary|verification
-```
-
-### 其他
-
-```bash
-wsf-tools generate-slug <text>               # 生成 URL-safe slug
-wsf-tools current-timestamp [format]         # 获取时间戳 (full|date|filename)
-wsf-tools list-todos [area]                  # 列出待办
-wsf-tools history-digest                     # 聚合所有 SUMMARY.md
-wsf-tools summary-extract <path> [--fields]  # 提取 SUMMARY 结构化数据
-wsf-tools websearch <query> [--limit N]      # Brave API 搜索
-```
-
----
-
-## 4. 核心模块详解
-
-### 4.1 安装器 (`bin/install.js`)
-
-- 入口：`npx wsf-cc` 或 `wsf-cc`
-- 参数：`--claude/--opencode/--gemini/--codex/--wopal-space/--all` + `--global/--local`
-- 逻辑：检测 runtime → 复制 files 到目标目录 → 注入 hooks 配置 → 处理 uninstall
-- 目标目录映射：
-  | Runtime | Global | Local |
-  |---------|--------|-------|
-  | Claude  | `~/.claude/` | `./.claude/` |
-  | OpenCode | `~/.config/opencode/` | `./.agents/` |
-  | Gemini | `~/.gemini/` | `./.gemini/` |
-  | Codex | `~/.codex/` | `./.codex/` |
-  | Wopal Space | `~/.wopal/` | `./.wopal/` |
-
-### 4.2 命令系统 (`commands/wsf/*.md`)
-
-- 格式：YAML frontmatter（name、description、argument-hint、allowed-tools）+ process XML
-- frontmatter 定义命令元数据和权限
-- process 通过 `@path` 引用 workflow 文件
-- 命令通过 `/wsf-xxx` 在目标 runtime 中触发
-
-#### WopalSpace 多项目空间约定
-
-- 在 WopalSpace 这类多项目工作空间中，关键入口命令支持显式项目参数，例如：
-  - `/wsf-map-codebase space-flow`
-  - `/wsf-new-project space-flow`
-  - `/wsf-discuss-phase 1 space-flow`
-  - `/wsf-plan-phase 1 space-flow`
-- 项目参数当前解析为 `projects/<name>/` 形态的子项目目录
-- 当命令在工作空间根目录运行，且当前目录存在 `projects/` 但不存在 `.planning/` 时，`new-project` / `map-codebase` / `progress` / `phase-op` / `plan-phase` / `execute-phase` / `verify-work` 必须要求显式项目参数，禁止默认把工作空间根目录当作项目根
-- 这类命令的 workflow 必须通过 `wsf-tools.cjs init ...` 吃到完整参数，并由工具层解析目标项目；不要在 workflow 内部自行猜测项目根
-
-### 4.3 Agent 系统 (`agents/*.md`)
-
-- 11 个 specialized agent，每个有 YAML frontmatter（name、description、tools、color）
-- 核心 agent：executor、planner、verifier、researcher（×2）、debugger
-- 辅助 agent：codebase-mapper、roadmapper、plan-checker、integration-checker、research-synthesizer
-- 模型配置见 `core.cjs` 中的 `MODEL_PROFILES` 表
-
-### 4.4 状态管理 (`wsf/bin/lib/`)
-
-- 所有项目状态存储在 `.planning/` 目录
-- 关键文件：`config.json`、`PROJECT.md`、`ROADMAP.md`、`STATE.md`、`REQUIREMENTS.md`
-- 阶段目录：`.planning/{phase_num}-{phase_name}/`
-  - `PLAN.md` — XML 结构化任务计划
-  - `SUMMARY.md` — 执行结果
-  - `CONTEXT.md` — 用户决策上下文
-
-#### 项目根解析职责
-
-- `findProjectRoot()` 的职责是：从已知项目目录或其子目录向上解析 `.planning/` 所属项目根
-- “空间项目名 → 项目目录”的解析属于独立职责，由 `wsf-tools.cjs` + `core.cjs` 的共享 helper 处理，不应把这层语义硬塞进 `findProjectRoot()`
-- 对于 WopalSpace 多项目空间，`init` 子命令先解析目标项目，再进入 `findProjectRoot()` / `loadConfig()` / `init.cjs` 逻辑
-
-### 4.5 模型配置
-
-| Agent | Quality | Balanced | Budget |
-|-------|---------|----------|--------|
-| wsf-planner | opus | opus | sonnet |
-| wsf-executor | opus | sonnet | sonnet |
-| wsf-phase-researcher | opus | sonnet | haiku |
-| wsf-project-researcher | opus | sonnet | haiku |
-| wsf-verifier | sonnet | sonnet | haiku |
-| wsf-debugger | opus | sonnet | sonnet |
-| wsf-plan-checker | sonnet | sonnet | haiku |
-
----
-
-## 5. 开发规范
-
-### 开发命令
-
-```bash
-npm run build:hooks     # 构建 hooks（复制到 hooks/dist/）
-npm test                # 运行测试（Node.js test runner）
-npm run test:coverage   # 测试 + 覆盖率（≥70% lines）
-```
-
-### Wopal Space Runtime
-
-`wopal-space` 是专为 WopalSpace 多项目工作空间设计的 runtime：
-
-- **安装目录**：local `./.wopal/`、global `~/.wopal/`
-- **单根目录模型**：skills、wsf、agents、manifest 全部在同一目录下
-- **不创建**：`.opencode/`、`.agents/`、`hooks/`、`settings.json`、`package.json`
-- **不自动配置** permissions — 需用户手动配置
-- **安装命令**：`node bin/install.js --wopal-space --local` 或 `--global`
-- **卸载命令**：`node bin/install.js --wopal-space --local --uninstall`
-
-### 测试
-
-- 框架：Node.js 内置 test runner（`--test`）
-- 文件：`tests/*.test.cjs`
-- 覆盖率：c8（`wsf/bin/lib/*.cjs`，阈值 70% lines）
-- 运行器：`scripts/run-tests.cjs`（跨平台，自动发现测试文件）
-- 涉及项目根解析、多项目空间支持、`--cwd` 透传时，至少更新：`tests/core.test.cjs`、`tests/init.test.cjs`、`tests/dispatcher.test.cjs`
-
-### 本地安装
-
-安装脚本使用 `process.cwd()` 确定安装位置，必须从目标目录执行：
-
-```bash
-# 单项目仓库：在项目根目录执行
-cd /path/to/your-project
-node /path/to/space-flow/bin/install.js --opencode --local
-# → 安装到 ./.agents/ 和 ./.opencode/
-
-# WopalSpace 多项目空间：在空间根目录执行
-cd /path/to/wopal-workspace
-node projects/space-flow/bin/install.js --opencode --local
-# → 安装到空间根 .agents/ 和 .opencode/
-```
-
-**禁止**在子项目目录（如 `projects/space-flow/`）内执行 `--local` 安装，会导致 WSF 被安装到错误位置。
-
-### 新增命令模板
-
-```markdown
----
-name: wsf-your-command
-description: Brief description
-argument-hint: "[flags]"
-allowed-tools:
-  - Read
-  - Bash
-  - Write
-  - Task
-  - AskUserQuestion
----
-<context>
-<!-- 条件、标志说明 -->
-</context>
-
-<objective>
-<!-- 命令目标、创建的文件 -->
-</objective>
-
-<execution_context>
-@~/.claude/wsf/workflows/your-workflow.md
-</execution_context>
-
-<process>
-Execute the your-workflow workflow end-to-end.
-</process>
-```
-
-### 新增 Agent 模板
-
-```markdown
----
-name: wsf-your-agent
-description: Brief role description
-tools: Read, Write, Edit, Bash, Grep, Glob
-color: yellow
----
-
-<role>
-<!-- Agent 角色定义 -->
-</role>
-```
-
----
-
-## 6. 代码约束
-
-**语言偏好**：
-- 所有生成文档的命令/工作流/Agent 必须支持 `--lang <code>` 参数
-- 语言决策逻辑：有参数用参数 → 无参数从上下文推断（USER.md "沟通语言" 或会话语言）→ 默认英文
-- 工作流从 `$ARGUMENTS` 解析 `--lang` 或从上下文推断语言，注入到子 agent prompt
-- Agent 收到 Language 指令后以该语言输出文档内容；技术术语、代码标识符、文件路径、命令保持英文
-- 已实现：`map-codebase`（workflow + agent）、`help`（workflow）；后续新增命令必须遵循此规范
-
-**多项目空间支持**：
-- 工作流从 `init` 输出提取 `project_root`，必须注入到所有子 agent prompt 中
-- 子 agent 的所有探索和文件操作必须限定在 `project_root` 目录内
-- 文档输出路径必须使用绝对路径（`{PROJECT_DIR}/.planning/codebase/`），避免 CWD 不匹配
-
-**代码风格**：
-- 纯 Node.js CommonJS（`.cjs`），无 TypeScript、无 bundler（hooks 除外）
-- 单文件测试，无测试框架依赖
-- 安装器是纯 JS，无外部依赖
-
-**安全红线**：
-- **禁止提交**：`.env`、API 密钥、用户配置
-- **禁止修改**：上游命令/Agent 的核心逻辑除非有明确理由
-
-**Hooks 构建**：
-- hooks 源文件在 `hooks/`，构建后到 `hooks/dist/`
-- esbuild 仅用于 hooks 打包，核心库不用 bundler
-- `prepublishOnly` 自动触发 `build:hooks`
